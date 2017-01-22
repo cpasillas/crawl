@@ -2118,9 +2118,9 @@ skeleton
 
 A skeleton compelled to unlife by the exercise of necromancy.
 %%%%
-sky beast
+zap manta
 
-A strange aerial creature formed of clouds and tortured flesh that sparkles
+A zappy, flying manta formed of clouds and tortured flesh that sparkles
 with electricity and, every so often, slips entirely from view.
 %%%%
 slave
