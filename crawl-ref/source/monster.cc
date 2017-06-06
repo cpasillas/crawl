@@ -34,6 +34,7 @@
 #include "god-item.h"
 #include "item-name.h"
 #include "item-prop.h"
+#include "item-status-flag-type.h"
 #include "items.h"
 #include "libutil.h"
 #include "makeitem.h"
@@ -2123,10 +2124,6 @@ void monster::swap_weapons(maybe_bool maybe_msg)
 {
     const bool msg = tobool(maybe_msg, observable());
 
-    // Don't let them swap weapons if berserk. ("You are too berserk!")
-    if (berserk())
-        return;
-
     item_def *weap = mslot_item(MSLOT_WEAPON);
     item_def *alt  = mslot_item(MSLOT_ALT_WEAPON);
 
@@ -2271,6 +2268,8 @@ static string _mon_special_name(const monster& mon, description_level_type desc,
 
     if (mon.type == MONS_NO_MONSTER)
         return "DEAD MONSTER";
+    else if (mon.mid == MID_YOU_FAULTLESS)
+        return "INVALID YOU_FAULTLESS";
     else if (invalid_monster_type(mon.type) && mon.type != MONS_PROGRAM_BUG)
         return _invalid_monster_str(mon.type);
 
@@ -2880,7 +2879,7 @@ void monster::banish(actor *agent, const string &, const int, bool force)
                             true /*possibly wrong*/, this);
         }
     }
-    monster_die(this, KILL_BANISHED, NON_MONSTER);
+    monster_die(*this, KILL_BANISHED, NON_MONSTER);
 
     if (!cell_is_solid(old_pos))
         place_cloud(CLOUD_TLOC_ENERGY, old_pos, 5 + random2(8), 0);
@@ -4485,8 +4484,18 @@ int monster::hurt(const actor *agent, int amount, beam_type flavour,
            did_hurt_conduct(DID_HURT_FOE, *this, amount);
         }
 
+        // Handle pain bond behavior here. Is technically passive damage.
+        // radiate_pain_bond may do additional damage by recursively looping
+        // back to the original trigger.
+        if (has_ench(ENCH_PAIN_BOND) && flavour != BEAM_SHARED_PAIN)
+        {
+            int hp_before_pain_bond = hit_points;
+            radiate_pain_bond(*this, amount, this);
+            amount += max(hp_before_pain_bond - hit_points, 0);
+        }
+
         // Allow the victim to exhibit passive damage behaviour (e.g.
-        // the Royal Jelly).
+        // the Royal Jelly or Uskayaw's Pain Bond).
         react_to_damage(agent, amount, flavour);
 
         // Don't mirror Yredelemnul's effects (in particular don't mirror
@@ -4494,7 +4503,10 @@ int monster::hurt(const actor *agent, int amount, beam_type flavour,
         if (has_ench(ENCH_MIRROR_DAMAGE)
             && crawl_state.which_god_acting() != GOD_YREDELEMNUL)
         {
-            mirror_damage_fineff::schedule(agent, this, amount * 2 / 3);
+            // ensure that YOU_FAULTLESS is converted to `you`. this may still
+            // fail e.g. when the damage is from a vault-created cloud
+            if (auto valid_agent = ensure_valid_actor(agent))
+                mirror_damage_fineff::schedule(valid_agent, this, amount * 2 / 3);
         }
 
         blame_damage(agent, amount);
@@ -4504,11 +4516,11 @@ int monster::hurt(const actor *agent, int amount, beam_type flavour,
         && type != MONS_NO_MONSTER)
     {
         if (agent == nullptr)
-            monster_die(this, KILL_MISC, NON_MONSTER);
+            monster_die(*this, KILL_MISC, NON_MONSTER);
         else if (agent->is_player())
-            monster_die(this, KILL_YOU, NON_MONSTER);
+            monster_die(*this, KILL_YOU, NON_MONSTER);
         else
-            monster_die(this, KILL_MON, agent->mindex());
+            monster_die(*this, KILL_MON, agent->mindex());
     }
 
     return amount;
@@ -4990,12 +5002,6 @@ bool monster::is_shapeshifter() const
     return has_ench(ENCH_GLOWING_SHAPESHIFTER, ENCH_SHAPESHIFTER);
 }
 
-void monster::forget_random_spell()
-{
-    if (!spells.empty())
-        spells.erase(spells.begin() + random2(spells.size()));
-}
-
 void monster::scale_hp(int num, int den)
 {
     // Without the +1, we lose maxhp on every berserk (the only use) if the
@@ -5297,7 +5303,7 @@ bool monster::malmutate(const string &/*reason*/)
     // Ugly things merely change colour.
     if (type == MONS_UGLY_THING || type == MONS_VERY_UGLY_THING)
     {
-        ugly_thing_mutate(this);
+        ugly_thing_mutate(*this);
         return true;
     }
 
@@ -5330,7 +5336,7 @@ bool monster::polymorph(int pow)
     // (very) ugly thing.
     if (type == MONS_UGLY_THING || type == MONS_VERY_UGLY_THING)
     {
-        ugly_thing_mutate(this);
+        ugly_thing_mutate(*this);
         return true;
     }
 
@@ -5345,7 +5351,7 @@ bool monster::polymorph(int pow)
     // and polymorph each part separately.
     if (type == MONS_SLIME_CREATURE)
     {
-        slime_creature_polymorph(this);
+        slime_creature_polymorph(*this);
         return true;
     }
 
@@ -5522,7 +5528,7 @@ void monster::apply_location_effects(const coord_def &oldpos,
 void monster::self_destruct()
 {
     suicide();
-    monster_die(as_monster(), KILL_MON, mindex());
+    monster_die(*as_monster(), KILL_MON, mindex());
 }
 
 /** A higher-level moving method than moveto().
@@ -5697,7 +5703,7 @@ int monster::action_energy(energy_use_type et) const
     }
 
     if (has_ench(ENCH_SWIFT))
-        move_cost -= 2;
+        move_cost -= 3;
 
     if (wearing_ego(EQ_ALL_ARMOUR, SPARM_PONDEROUSNESS))
         move_cost += 1;
@@ -5993,19 +5999,19 @@ bool monster::evoke_jewellery_effect(jewellery_type jtype)
 void monster::react_to_damage(const actor *oppressor, int damage,
                                beam_type flavour)
 {
-    if (has_ench(ENCH_PAIN_BOND))
-        radiate_pain_bond(*this, damage);
-
     // Don't discharge on small amounts of damage (this helps avoid
     // continuously shocking when poisoned or sticky flamed)
     // XXX: this might not be necessary anymore?
-    if (type == MONS_SHOCK_SERPENT && damage > 4 && oppressor)
+    if (type == MONS_SHOCK_SERPENT && damage > 4 && oppressor && oppressor != this)
     {
         const int pow = div_rand_round(min(damage, hit_points + damage), 9);
         if (pow)
         {
-            shock_serpent_discharge_fineff::schedule(this, *oppressor, pos(),
-                                                     pow);
+            // we intentionally allow harming the oppressor in this case,
+            // so need to cast off its constness
+            shock_serpent_discharge_fineff::schedule(this,
+                                                     const_cast<actor&>(*oppressor),
+                                                     pos(), pow);
         }
     }
 
@@ -6560,6 +6566,13 @@ bool monster::stasis() const
 {
     return mons_genus(type) == MONS_FORMICID
            || type == MONS_PLAYER_GHOST && ghost->species == SP_FORMICID;
+}
+
+bool monster::cloud_immune(bool calc_unid, bool items) const
+{
+    // Cloud Mage is also checked for in (so stay in sync with)
+    // monster_info::monster_info(monster_type, monster_type).
+    return type == MONS_CLOUD_MAGE || actor::cloud_immune(calc_unid, items);
 }
 
 bool monster::is_illusion() const

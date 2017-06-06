@@ -179,7 +179,7 @@ vector<monster* > get_nearby_monsters(bool want_move,
     ASSERT(!crawl_state.game_is_arena());
 
     if (range == -1)
-        range = LOS_RADIUS;
+        range = you.current_vision;
 
     vector<monster* > mons;
 
@@ -416,7 +416,9 @@ void revive()
     set_hunger(HUNGER_DEFAULT, true);
     restore_stat(STAT_ALL, 0, true);
 
+#if TAG_MAJOR_VERSION == 34
     you.attribute[ATTR_DELAYED_FIREBALL] = 0;
+#endif
     clear_trapping_net();
     you.attribute[ATTR_DIVINE_VIGOUR] = 0;
     you.attribute[ATTR_DIVINE_STAMINA] = 0;
@@ -429,6 +431,9 @@ void revive()
     you.attribute[ATTR_INVIS_UNCANCELLABLE] = 0;
     you.attribute[ATTR_FLIGHT_UNCANCELLABLE] = 0;
     you.attribute[ATTR_XP_DRAIN] = 0;
+    you.attribute[ATTR_HEAVENLY_STORM] = 0;
+    you.los_noise_level = 0;
+    you.los_noise_last_turn = 0; // silence in death
     if (you.duration[DUR_SCRYING])
         you.xray_vision = false;
 

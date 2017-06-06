@@ -8,6 +8,7 @@
 #include "terrain.h"
 
 #include <algorithm>
+#include <functional>
 #include <sstream>
 
 #include "areas.h"
@@ -26,6 +27,7 @@
 #include "god-abil.h"
 #include "item-prop.h"
 #include "items.h"
+#include "level-state-type.h"
 #include "libutil.h"
 #include "map-knowledge.h"
 #include "mapmark.h"
@@ -344,6 +346,7 @@ command_type feat_stair_direction(dungeon_feature_type feat)
     case DNGN_ENTER_PANDEMONIUM:
     case DNGN_EXIT_PANDEMONIUM:
     case DNGN_TRANSIT_PANDEMONIUM:
+    case DNGN_TRANSPORTER:
         return CMD_GO_DOWNSTAIRS;
 
     default:
@@ -363,6 +366,16 @@ bool feat_is_opaque(dungeon_feature_type feat)
 bool feat_is_solid(dungeon_feature_type feat)
 {
     return get_feature_def(feat).flags & FFT_SOLID;
+}
+
+/** Can you wall jump against this feature? (Wu Jian)?
+ */
+bool feat_can_wall_jump_against(dungeon_feature_type feat)
+{
+    return feat_is_wall(feat)
+           || feat == DNGN_GRATE
+           || feat_is_tree(feat)
+           || feat_is_statuelike(feat);
 }
 
 /** Can you move into this cell in normal play?
@@ -423,6 +436,14 @@ bool feat_is_statuelike(dungeon_feature_type feat)
 bool feat_is_permarock(dungeon_feature_type feat)
 {
     return feat == DNGN_PERMAROCK_WALL || feat == DNGN_CLEAR_PERMAROCK_WALL;
+}
+
+/** Is this feature an open expanse used only as a map border?
+ */
+bool feat_is_endless(dungeon_feature_type feat)
+{
+    return feat == DNGN_OPEN_SEA || feat == DNGN_LAVA_SEA
+           || feat == DNGN_ENDLESS_SALT;
 }
 
 /** Can this feature be dug?
@@ -499,6 +520,7 @@ static const pair<god_type, dungeon_feature_type> _god_altars[] =
     { GOD_PAKELLAS, DNGN_ALTAR_PAKELLAS },
     { GOD_USKAYAW, DNGN_ALTAR_USKAYAW },
     { GOD_HEPLIAKLQANA, DNGN_ALTAR_HEPLIAKLQANA },
+    { GOD_WU_JIAN, DNGN_ALTAR_WU_JIAN },
     { GOD_ECUMENICAL, DNGN_ALTAR_ECUMENICAL },
 };
 
@@ -1366,7 +1388,7 @@ bool swap_features(const coord_def &pos1, const coord_def &pos2,
     env.markers.move(pos1, temp);
     dungeon_events.move_listeners(pos1, temp);
     grd(pos1) = DNGN_UNSEEN;
-    env.pgrid(pos1) = 0;
+    env.pgrid(pos1) = terrain_property_t{};
 
     (void) move_notable_thing(pos2, pos1);
     env.markers.move(pos2, pos1);
@@ -1999,6 +2021,10 @@ void temp_change_terrain(coord_def pos, dungeon_feature_type newfeat, int dur,
                     if (mon)
                         tmarker->mon_num = mon->mid;
                 }
+                // ensure that terrain change happens. Sometimes a terrain
+                // change marker can get stuck; this allows re-doing such
+                // cases. Also probably needed by the else case above.
+                dungeon_terrain_changed(pos, newfeat, false, true, true);
                 return;
             }
             else
@@ -2059,7 +2085,7 @@ static bool _revert_terrain_to_floor(coord_def pos)
     }
 
     if (grd(pos) == DNGN_RUNED_DOOR && newfeat != DNGN_RUNED_DOOR)
-        opened_runed_door();
+        explored_tracked_feature(DNGN_RUNED_DOOR);
 
     grd(pos) = newfeat;
     set_terrain_changed(pos);

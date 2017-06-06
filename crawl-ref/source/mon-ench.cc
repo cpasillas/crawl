@@ -22,6 +22,7 @@
 #include "fight.h"
 #include "fprop.h"
 #include "hints.h"
+#include "item-status-flag-type.h"
 #include "items.h"
 #include "libutil.h"
 #include "losglobal.h"
@@ -466,7 +467,7 @@ void monster::remove_enchantment_effect(const mon_enchant &me, bool quiet)
             if (type == MONS_ALLIGATOR)
                 simple_monster_message(*this, " slows down.");
             else
-                simple_monster_message(*this, " is no longer moving somewhat quickly.");
+                simple_monster_message(*this, " is no longer moving quickly.");
         }
         break;
 
@@ -679,7 +680,10 @@ void monster::remove_enchantment_effect(const mon_enchant &me, bool quiet)
 
             if (!quiet)
                 simple_monster_message(*this, " breaks free.");
+            break;
         }
+
+        monster_web_cleanup(*this, true);
         break;
     }
     case ENCH_FAKE_ABJURATION:
@@ -698,13 +702,13 @@ void monster::remove_enchantment_effect(const mon_enchant &me, bool quiet)
         if (berserk())
             simple_monster_message(*this, " is no longer berserk.");
 
-        monster_die(this, (me.ench == ENCH_FAKE_ABJURATION) ? KILL_MISC :
+        monster_die(*this, (me.ench == ENCH_FAKE_ABJURATION) ? KILL_MISC :
                             (quiet) ? KILL_DISMISSED : KILL_RESET, NON_MONSTER);
         break;
     case ENCH_SHORT_LIVED:
         // Conjured ball lightnings explode when they time out.
         suicide();
-        monster_die(this, KILL_TIMEOUT, NON_MONSTER);
+        monster_die(*this, KILL_TIMEOUT, NON_MONSTER);
         break;
     case ENCH_SUBMERGED:
         if (mons_is_wandering(*this))
@@ -863,7 +867,7 @@ void monster::remove_enchantment_effect(const mon_enchant &me, bool quiet)
 
         // Done here to avoid duplicate messages
         if (you.duration[DUR_GRASPING_ROOTS])
-            check_grasping_roots(&you, true);
+            check_grasping_roots(you, true);
 
         break;
 
@@ -1269,6 +1273,7 @@ static bool _merfolk_avatar_movement_effect(const monster* mons)
                          mon->name(DESC_THE).c_str());
                 }
                 move_player_to_grid(newpos, true);
+                stop_delay(true);
 
                 if (swapping)
                     mon->apply_location_effects(newpos);
@@ -1445,6 +1450,7 @@ void monster::apply_enchantment(const mon_enchant &me)
     case ENCH_SAP_MAGIC:
     case ENCH_CORROSION:
     case ENCH_GOLD_LUST:
+    case ENCH_DISTRACTED_ACROBATICS:
     case ENCH_RESISTANCE:
     case ENCH_HEXED:
     case ENCH_BRILLIANCE_AURA:
@@ -1612,7 +1618,7 @@ void monster::apply_enchantment(const mon_enchant &me)
                 }
             }
 
-            monster_die(this, KILL_MISC, NON_MONSTER, true);
+            monster_die(*this, KILL_MISC, NON_MONSTER, true);
         }
         break;
 
@@ -1914,7 +1920,7 @@ void monster::apply_enchantment(const mon_enchant &me)
         break;
 
     case ENCH_GRASPING_ROOTS:
-        check_grasping_roots(this);
+        check_grasping_roots(*this);
         break;
 
     case ENCH_TORNADO_COOLDOWN:
@@ -2155,7 +2161,7 @@ static const char *enchant_names[] =
 #endif
     "aura_of_brilliance", "empowered_spells", "gozag_incite", "pain_bond",
     "idealised", "bound_soul", "infestation",
-    "stilling the winds", "thunder_ringed",
+    "stilling the winds", "thunder_ringed", "distracted by acrobatics",
     "buggy",
 };
 

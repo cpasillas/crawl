@@ -3,11 +3,14 @@
  * @brief Misc monster related functions.
 **/
 
-#ifndef MONUTIL_H
-#define MONUTIL_H
+#pragma once
+
+#include <functional>
 
 #include "enum.h"
+#include "los-type.h"
 #include "mon-enum.h"
+#include "mon-inv-type.h"
 #include "player.h"
 
 struct bolt;
@@ -310,6 +313,7 @@ bool mons_is_zombified(const monster& mons);
 bool mons_class_can_be_zombified(monster_type mc);
 bool mons_can_be_zombified(const monster& mon);
 bool mons_class_can_use_stairs(monster_type mc);
+bool mons_class_can_use_transporter(monster_type mc);
 bool mons_can_use_stairs(const monster& mon,
                          dungeon_feature_type stair = DNGN_UNSEEN);
 bool mons_enslaved_body_and_soul(const monster& mon);
@@ -558,7 +562,7 @@ int max_mons_charge(monster_type m);
 
 void init_mutant_beast(monster &mon, short HD, vector<int> beast_facets,
                        set<int> avoid_facets);
-void radiate_pain_bond(const monster& mon, int damage);
+void radiate_pain_bond(const monster& mon, int damage, const monster* original_target);
 void throw_monster_bits(const monster& mon);
 void set_ancestor_spells(monster &ancestor, bool notify = false);
 
@@ -570,5 +574,3 @@ bool apply_visible_monsters(monster_func mf,
                             los_type los = LOS_NO_TRANS);
 
 int derived_undead_avg_hp(monster_type mtype, int hd, int scale = 10);
-
-#endif

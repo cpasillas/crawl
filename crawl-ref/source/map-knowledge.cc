@@ -7,6 +7,7 @@
 #include "directn.h"
 #include "env.h"
 #include "god-passive.h" // passive_t::auto_map
+#include "level-state-type.h"
 #include "notes.h"
 #include "religion.h"
 #include "terrain.h"
@@ -14,6 +15,7 @@
  #include "tilepick.h"
  #include "tileview.h"
 #endif
+#include "travel.h"
 #include "view.h"
 
 void set_terrain_mapped(const coord_def gc)
@@ -68,6 +70,21 @@ void clear_map(bool clear_items, bool clear_mons)
     }
 }
 
+void clear_map_or_travel_trail()
+{
+    if (Options.show_travel_trail && env.travel_trail.size())
+    {
+        mpr("Clearing travel trail.");
+        clear_travel_trail();
+    }
+    else
+    {
+        mpr("Clearing level map.");
+        clear_map();
+        crawl_view.set_player_at(you.pos());
+    }
+}
+
 static void _automap_from(int x, int y, int mutated)
 {
     if (mutated)
@@ -82,7 +99,7 @@ static void _automap_from(int x, int y, int mutated)
 
 static int _map_quality()
 {
-    int passive = player_mutation_level(MUT_PASSIVE_MAPPING);
+    int passive = you.get_mutation_level(MUT_PASSIVE_MAPPING);
     // the explanation of this 51 vs max_piety of 200 is left as
     // an exercise to the reader
     if (have_passive(passive_t::auto_map))

@@ -329,11 +329,11 @@ static void _give_starting_food()
         base_type = OBJ_POTIONS;
         sub_type  = POT_BLOOD;
     }
-    else if (player_mutation_level(MUT_CARNIVOROUS))
+    else if (you.get_mutation_level(MUT_CARNIVOROUS))
         sub_type = FOOD_MEAT_RATION;
 
     // Give another one for hungry species.
-    if (player_mutation_level(MUT_FAST_METABOLISM))
+    if (you.get_mutation_level(MUT_FAST_METABOLISM))
         quantity = 2;
 
     newgame_make_item(base_type, sub_type, quantity);
@@ -474,7 +474,7 @@ static void _setup_generic(const newgame_def& ng)
     species_stat_init(you.species);     // must be down here {dlb}
 
     // Before we get into the inventory init, set light radius based
-    // on species vision. Currently, all species see out to 8 squares.
+    // on species vision.
     update_vision_range();
 
     job_stat_init(you.char_class);

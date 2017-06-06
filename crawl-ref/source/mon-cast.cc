@@ -9,12 +9,14 @@
 
 #include <algorithm>
 #include <cmath>
+#include <functional>
 #include <unordered_set>
 
 #include "act-iter.h"
 #include "areas.h"
 #include "bloodspatter.h"
 #include "branch.h"
+#include "cleansing-flame-source-type.h"
 #include "cloud.h"
 #include "colour.h"
 #include "coordit.h"
@@ -29,6 +31,7 @@
 #include "fprop.h"
 #include "god-passive.h"
 #include "items.h"
+#include "level-state-type.h"
 #include "libutil.h"
 #include "losglobal.h"
 #include "mapmark.h"
@@ -1139,8 +1142,6 @@ int mons_spell_range(spell_type spell, int hd)
 {
     switch (spell)
     {
-        case SPELL_SANDBLAST:
-            return 2; // spell_range changes with player wielded items
         case SPELL_FLAME_TONGUE:
             // HD:1 monsters would get range 2, HD:2 -- 3, other 4, let's
             // use the mighty Throw Flame for big ranges.
@@ -1296,6 +1297,7 @@ bolt mons_spell_beam(const monster* mons, spell_type spell_cast, int power,
     case SPELL_BLINKBOLT:
     case SPELL_STEAM_BALL:
     case SPELL_TELEPORT_OTHER:
+    case SPELL_SANDBLAST:
         zappy(spell_to_zap(real_spell), power, true, beam);
         break;
 
@@ -1303,11 +1305,7 @@ bolt mons_spell_beam(const monster* mons, spell_type spell_cast, int power,
         zappy(ZAP_DAZZLING_SPRAY, power, true, beam);
         break;
 
-    case SPELL_SANDBLAST: // special-cased to avoid breaking battlesphere :(
-        zappy(ZAP_SANDBLAST, power, true, beam);
-        break;
-
-    case SPELL_FREEZING_CLOUD: // another battlesphere special-case
+    case SPELL_FREEZING_CLOUD: // battlesphere special-case
         zappy(ZAP_FREEZING_BLAST, power, true, beam);
         break;
 
@@ -1949,7 +1947,7 @@ static bool _animate_dead_okay(spell_type spell)
         return false;
     }
 
-    if (you.hunger_state < HS_SATIATED && you.mutation[MUT_HERBIVOROUS] < 3)
+    if (you.hunger_state < HS_SATIATED && you.get_base_mutation_level(MUT_HERBIVOROUS) < 3)
         return false;
 
     if (god_hates_spell(spell, you.religion))
@@ -1963,7 +1961,7 @@ static bool _animate_dead_okay(spell_type spell)
 }
 
 // Returns true if the spell is something you wouldn't want done if
-// you had a friendly target...  only returns a meaningful value for
+// you had a friendly target... only returns a meaningful value for
 // non-beam spells.
 static bool _ms_direct_nasty(spell_type monspell)
 {
@@ -2155,7 +2153,7 @@ static bool _battle_cry(const monster& chief, bool check_only = false)
         return false;
 
     // The yell happens whether you happen to see it or not.
-    noisy(LOS_RADIUS, chief.pos(), chief.mid);
+    noisy(LOS_DEFAULT_RANGE, chief.pos(), chief.mid);
 
     if (!seen_affected.empty())
         _print_battlecry_announcement(chief, seen_affected);
@@ -2338,70 +2336,103 @@ static bool _should_force_door_shut(const coord_def& door)
     return ((cur_tension - new_tension) * 3) <= cur_tension;
 }
 
-// Find an adjacent space to displace a stack of items or a creature
-// (If act is null, we are just moving items and not an actor)
+/*
+ * Find an adjacent space to displace a stack of items or a creature.
+ *
+ * @param pos the starting position to displace from.
+ * @param newpos if successful, will populate this with the new position.
+ * @param act an actor to displace, or null if the goal is to displace items.
+ * @param ignore_tension should displacement ignore tension, or prioritize spots
+ *                       that maximize tension?  Used for vault wardens, and
+ *                       only affects pushing actors.
+ * @param excluded any spots to rule out a priori. Used for e.g. imprison.
+ *
+ * @return whether displacement is possible. If successful, will also populate
+ *         `newpos` with the preferred target. Otherwise, will not change
+ *         `newpos`.
+ */
 bool get_push_space(const coord_def& pos, coord_def& newpos, actor* act,
                     bool ignore_tension, const vector<coord_def>* excluded)
 {
     if (act && act->is_stationary())
         return false;
 
+    dungeon_feature_type starting_feat = grd(pos);
     int max_tension = -1;
     coord_def best_spot(-1, -1);
     bool can_push = false;
+    bool found_non_deep_spot = false; // used for pushing items only
     for (adjacent_iterator ai(pos); ai; ++ai)
     {
         dungeon_feature_type feat = grd(*ai);
-        if (feat_has_solid_floor(feat))
+
+        // Make sure the spot wasn't already vetoed. This is used e.g. for
+        // imprison to pre-exclude all the spots where a wall will be.
+        if (excluded && find(begin(*excluded), end(*excluded), *ai)
+                            != end(*excluded))
         {
-            // Extra checks if we're moving a monster instead of an item
-            if (act)
+            continue;
+        }
+
+        // can never push to a solid space
+        if (feat_is_solid(feat))
+            continue;
+
+        // Extra checks if we're moving a monster instead of an item
+        if (act)
+        {
+            // these should get deep water and lava for cases where they matter
+            if (actor_at(*ai)
+                || !act->can_pass_through(*ai)
+                || !act->is_habitable(*ai))
             {
-                if (actor_at(*ai)
-                    || !act->can_pass_through(*ai)
-                    || !act->is_habitable(*ai))
-                {
-                    continue;
-                }
-
-                // Make sure the spot wasn't vetoed.
-                if (excluded && find(begin(*excluded), end(*excluded), *ai)
-                                    != end(*excluded))
-                {
-                    continue;
-                }
-
-                // If we don't care about tension, first valid spot is acceptable
-                if (ignore_tension)
-                {
-                    newpos = *ai;
-                    return true;
-                }
-                else // Calculate tension with monster at new location
-                {
-                    set<coord_def> all_door;
-                    find_connected_identical(pos, all_door);
-                    dungeon_feature_type old_feat = grd(pos);
-
-                    act->move_to_pos(*ai);
-                    _set_door(all_door, DNGN_CLOSED_DOOR);
-                    int new_tension = get_tension(GOD_NO_GOD);
-                    _set_door(all_door, old_feat);
-                    act->move_to_pos(pos);
-
-                    if (new_tension > max_tension)
-                    {
-                        max_tension = new_tension;
-                        best_spot = *ai;
-                        can_push = true;
-                    }
-                }
+                continue;
             }
-            else //If we're not moving a creature, the first open spot is enough
+
+            // If we don't care about tension, first valid spot is acceptable
+            if (ignore_tension)
             {
                 newpos = *ai;
                 return true;
             }
+            else // Calculate tension with monster at new location
+            {
+                set<coord_def> all_door;
+                find_connected_identical(pos, all_door);
+                dungeon_feature_type old_feat = grd(pos);
+
+                act->move_to_pos(*ai);
+                _set_door(all_door, DNGN_CLOSED_DOOR);
+                int new_tension = get_tension(GOD_NO_GOD);
+                _set_door(all_door, old_feat);
+                act->move_to_pos(pos);
+
+                if (new_tension > max_tension)
+                {
+                    max_tension = new_tension;
+                    best_spot = *ai;
+                    can_push = true;
+                }
+            }
+        }
+        else
+        {
+            if (feat_has_solid_floor(feat))
+            {
+                // TODO (?): this will allow pushing items out of deep water.
+                best_spot = *ai;
+                found_non_deep_spot = true;
+                can_push = true;
+            }
+            else if (!found_non_deep_spot
+                && starting_feat == DNGN_DEEP_WATER
+                && feat == DNGN_DEEP_WATER)
+            {
+                // dispreferentially allow pushing items from deep water to deep water
+                best_spot = *ai;
+                can_push = true;
+            }
+            // otherwise, can't position an item on this spot
         }
     }
 
@@ -2461,6 +2492,8 @@ static bool _seal_doors_and_stairs(const monster* warden,
                     const bool success =
                         get_push_space(dc, newpos, act, false, &veto_spots)
                         || get_push_space(dc, newpos, act, true, &veto_spots);
+                    // this assert is only triggered if the code here is out of
+                    // sync with _can_force_door_shut.
                     ASSERTM(success, "No push space from (%d,%d)", dc.x, dc.y);
 
                     move_items(dc, newpos);
@@ -3582,7 +3615,7 @@ static bool _prepare_ghostly_sacrifice(monster &caster, bolt &beam)
         mprf("%s animating energy erupts into ghostly fire!",
              apostrophise(victim->name(DESC_THE)).c_str());
     }
-    monster_die(victim, &caster, true);
+    monster_die(*victim, &caster, true);
     return true;
 }
 
@@ -3722,28 +3755,28 @@ static mon_spell_slot _pick_spell_from_list(const monster_spells &spells,
  * Are we a short distance from our target?
  *
  * @param  mons The monster checking distance from its target.
- * @return true if we have a target and are within LOS_RADIUS / 2 of that
+ * @return true if we have a target and are within LOS_DEFAULT_RANGE / 2 of that
  *         target, or false otherwise.
  */
 static bool _short_target_range(const monster *mons)
 {
     return mons->get_foe()
            && mons->pos().distance_from(mons->get_foe()->pos())
-              < LOS_RADIUS / 2;
+              < LOS_DEFAULT_RANGE / 2;
 }
 
 /**
  * Are we a long distance from our target?
  *
  * @param  mons The monster checking distance from its target.
- * @return true if we have a target and are outside LOS_RADIUS / 2 of that
- *         target, or false otherwise.
+ * @return true if we have a target and are outside LOS_DEFAULT_RANGE / 2 of
+ *          that target, or false otherwise.
  */
 static bool _long_target_range(const monster *mons)
 {
     return mons->get_foe()
            && mons->pos().distance_from(mons->get_foe()->pos())
-              > LOS_RADIUS / 2;
+              > LOS_DEFAULT_RANGE / 2;
 }
 
 /// Does the given monster think it's in an emergency situation?
@@ -5528,11 +5561,12 @@ static void _sheep_message(int num_sheep, int sleep_pow, actor& foe)
                                num_sheep == 1 ? "s its" : " their");
     }
 
-    if (!foe.is_player()) // Messaging for non-player targets
+    // Messaging for non-player targets
+    if (!foe.is_player() && you.see_cell(foe.pos()))
     {
         const char* pluralize = num_sheep == 1 ? "s": "";
         const string foe_name = foe.name(DESC_THE);
-        if (you.see_cell(foe.pos()) && sleep_pow)
+        if (sleep_pow)
         {
             mprf(foe.as_monster()->friendly() ? MSGCH_FRIEND_SPELL
                                               : MSGCH_MONSTER_SPELL,
@@ -5551,7 +5585,7 @@ static void _sheep_message(int num_sheep, int sleep_pow, actor& foe)
             mprf("%s is unaffected.", foe_name.c_str());
         }
     }
-    else
+    else if (foe.is_player())
     {
         mprf(MSGCH_MONSTER_SPELL, "%s%s", message.c_str(),
              sleep_pow ? " You feel drowsy..." : "");
@@ -5676,7 +5710,7 @@ static void _mons_upheaval(monster& mons, actor& foe)
                 {
                     temp_change_terrain(
                         pos, DNGN_LAVA,
-                        random2(you.skill(SK_INVOCATIONS, BASELINE_DELAY)),
+                        random2(14) * BASELINE_DELAY,
                         TERRAIN_CHANGE_FLOOD);
                 }
                 break;
@@ -7335,7 +7369,6 @@ void mons_cast_noise(monster* mons, const bolt &pbolt,
                      spell_type spell_cast, mon_spell_slot_flags slot_flags)
 {
     bool force_silent = false;
-    noise_flag_type noise_flags = NF_NONE;
 
     if (mons->type == MONS_SHADOW_DRAGON)
         // Draining breath is silent.
@@ -7364,7 +7397,7 @@ void mons_cast_noise(monster* mons, const bolt &pbolt,
         if (silent)
             return;
 
-        noisy(noise, mons->pos(), mons->mid, noise_flags);
+        noisy(noise, mons->pos(), mons->mid);
         return;
     }
 
@@ -7400,7 +7433,7 @@ void mons_cast_noise(monster* mons, const bolt &pbolt,
 
     if (silent || noise == 0)
         mons_speaks_msg(mons, msg, chan, true);
-    else if (noisy(noise, mons->pos(), mons->mid, noise_flags) || !unseen)
+    else if (noisy(noise, mons->pos(), mons->mid) || !unseen)
     {
         // noisy() returns true if the player heard the noise.
         mons_speaks_msg(mons, msg, chan);
@@ -7746,7 +7779,7 @@ static void _siren_sing(monster* mons, bool avatar)
                                                        : MSGCH_MONSTER_SPELL);
     const bool already_mesmerised = you.beheld_by(*mons);
 
-    noisy(LOS_RADIUS, mons->pos(), mons->mid, NF_SIREN);
+    noisy(LOS_DEFAULT_RANGE, mons->pos(), mons->mid);
 
     if (avatar && !mons->has_ench(ENCH_MERFOLK_AVATAR_SONG))
         mons->add_ench(mon_enchant(ENCH_MERFOLK_AVATAR_SONG, 0, mons, 70));

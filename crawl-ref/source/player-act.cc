@@ -159,7 +159,7 @@ int player::get_experience_level() const
 
 int player::get_max_xl() const
 {
-    return 27 - player_mutation_level(MUT_INEXPERIENCED) * RU_SAC_XP_LEVELS;
+    return 27 - get_mutation_level(MUT_INEXPERIENCED) * RU_SAC_XP_LEVELS;
 }
 
 bool player::can_pass_through_feat(dungeon_feature_type grid) const
@@ -301,8 +301,10 @@ random_var player::attack_delay(const item_def *projectile, bool rescale) const
         attk_delay = div_rand_round(attk_delay, 2);
     }
 
-    // see comment on player.cc:player_speed
-    return rv::max(div_rand_round(attk_delay * you.time_taken, 10),
+    // TODO: does this really have to depend on `you.time_taken`?  In basic
+    // cases at least, `you.time_taken` is just `player_speed()`. See
+    // `_prep_input`.
+    return rv::max(div_rand_round(attk_delay * you.time_taken, BASELINE_DELAY),
                    random_var(2));
 }
 
@@ -352,7 +354,7 @@ bool player::can_wield(const item_def& item, bool ignore_curse,
 
     if (two_handed && (
         (!ignore_shield && shield())
-        || player_mutation_level(MUT_MISSING_HAND)))
+        || get_mutation_level(MUT_MISSING_HAND)))
     {
         return false;
     }
@@ -409,7 +411,7 @@ bool player::could_wield(const item_def &item, bool ignore_brand,
         return false;
     }
 
-    if (player_mutation_level(MUT_MISSING_HAND)
+    if (get_mutation_level(MUT_MISSING_HAND)
         && you.hands_reqd(item) == HANDS_TWO)
     {
         return false;
@@ -499,7 +501,7 @@ string player::hand_name(bool plural, bool *can_plural) const
     bool _can_plural;
     if (can_plural == nullptr)
         can_plural = &_can_plural;
-    *can_plural = !player_mutation_level(MUT_MISSING_HAND);
+    *can_plural = !get_mutation_level(MUT_MISSING_HAND);
 
     const string singular = _hand_name_singular();
     if (plural && *can_plural)
@@ -519,7 +521,7 @@ static string _foot_name_singular(bool *can_plural)
     if (!get_form()->foot_name.empty())
         return get_form()->foot_name;
 
-    if (player_mutation_level(MUT_HOOVES) >= 3)
+    if (you.get_mutation_level(MUT_HOOVES) >= 3)
         return "hoof";
 
     if (you.has_usable_talons())
@@ -663,8 +665,8 @@ void player::attacking(actor *other, bool ranged)
     if (ranged || mons_is_firewood(*(monster*) other))
         return;
 
-    const int chance = pow(3, player_mutation_level(MUT_BERSERK) - 1);
-    if (player_mutation_level(MUT_BERSERK) && x_chance_in_y(chance, 100))
+    const int chance = pow(3, get_mutation_level(MUT_BERSERK) - 1);
+    if (has_mutation(MUT_BERSERK) && x_chance_in_y(chance, 100))
         go_berserk(false);
 }
 
@@ -749,15 +751,6 @@ bool player::go_berserk(bool intentional, bool potion)
 
     you.redraw_quiver = true; // Account for no firing.
 
-#if TAG_MAJOR_VERSION == 34
-    if (you.species == SP_LAVA_ORC)
-    {
-        mpr("You burn with rage!");
-        // This will get sqrt'd later, so.
-        you.temperature = TEMP_MAX;
-    }
-#endif
-
     if (player_equip_unrand(UNRAND_ZEALOT_SWORD))
         for (monster_near_iterator mi(you.pos(), LOS_NO_TRANS); mi; ++mi)
             if (mi->friendly())
@@ -780,18 +773,14 @@ bool player::can_go_berserk(bool intentional, bool potion, bool quiet,
 
     if (berserk())
         msg = "You're already berserk!";
-    else if (duration[DUR_EXHAUSTED])
-         msg = "You're too exhausted to go berserk.";
+    else if (duration[DUR_BERSERK_COOLDOWN])
+         msg = "You're still recovering from your berserk rage.";
     else if (duration[DUR_DEATHS_DOOR])
         msg = "You can't enter a blood rage from death's door.";
     else if (beheld() && !player_equip_unrand(UNRAND_DEMON_AXE))
         msg = "You are too mesmerised to rage.";
     else if (afraid())
         msg = "You are too terrified to rage.";
-#if TAG_MAJOR_VERSION == 34
-    else if (you.species == SP_DJINNI)
-        msg = "Only creatures of flesh and blood can berserk.";
-#endif
     else if (is_lifeless_undead())
         msg = "You cannot raise a blood rage in your lifeless body.";
     else if (stasis())

@@ -1,8 +1,8 @@
 %%%%
-Barachian
+Barachi
 
-Barachians are amphibious humanoids with an exceptionally vicious disposition.
-They can hop long distances, though their movement is otherwise somewhat slow.
+Barachim are amphibious humanoids who rebelled against the gods. They're fast
+learners and can hop long distances, but are otherwise slow and easily seen.
 %%%%
 Centaur
 
@@ -52,6 +52,12 @@ Gargoyle
 
 Made of living stone, Gargoyles have a preternatural affinity for the earth.
 They have low health, but their stone bodies are incredibly tough.
+%%%%
+Gnoll
+
+Gnolls are canine-like humanoids. They are quick to learn the basics of any
+skill, but struggle to master any. Their strong noses can sniff out treasure
+from afar.
 %%%%
 Halfling
 

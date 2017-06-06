@@ -17,11 +17,13 @@
 #include "hints.h"
 #include "item-name.h"
 #include "item-prop.h"
+#include "item-status-flag-type.h"
 #include "item-use.h"
 #include "message.h"
 #include "mutation.h"
 #include "nearby-danger.h"
 #include "player-stats.h"
+#include "potion-type.h"
 #include "prompt.h"
 #include "religion.h"
 #include "skill-menu.h"
@@ -215,7 +217,7 @@ public:
  */
 static string _blood_flavour_message()
 {
-    if (player_mutation_level(MUT_HERBIVOROUS) < 3 && player_likes_chunks())
+    if (you.get_mutation_level(MUT_HERBIVOROUS) < 3 && player_likes_chunks())
         return "This tastes like blood.";
     return "Yuck - this tastes like blood.";
 }
@@ -604,10 +606,6 @@ public:
 
     bool can_quaff(string *reason = nullptr) const override
     {
-#if TAG_MAJOR_VERSION == 34
-        if (you.species == SP_DJINNI)
-            return PotionHealWounds::instance().can_quaff(reason);
-#endif
         if (you.magic_points == you.max_magic_points)
         {
             if (reason)
@@ -619,14 +617,6 @@ public:
 
     bool effect(bool=true, int pow = 40, bool=true) const override
     {
-#if TAG_MAJOR_VERSION == 34
-        // Allow repairing rot, disallow going through Death's Door.
-        if (you.species == SP_DJINNI
-            && PotionHealWounds::instance().can_quaff())
-        {
-            return PotionHealWounds::instance().effect(pow);
-        }
-#endif
         inc_mp(POT_MAGIC_MP);
         mpr("Magic courses through your body.");
         return true;
@@ -676,194 +666,25 @@ public:
 };
 
 /**
- * Is the player unable to mutate (temporarily or permanently) & thus unable
- * to drink a mutation-causing potion?
+ * Is the player able to mutate (temporarily or permanently) & thus unable
+ * to drink a mutation-causing potion?  This is a wrapper on `you.can_safely_mutate`.
+ *
  * @param reason Pointer to a string where the reason will be stored if unable
  *               to mutate
- * @returns True if the player is able to mutate now.
+ * @returns true iff the player is able to mutate right now.
  */
-static bool _disallow_mutate(string *reason)
+static bool _can_mutate(string *reason)
 {
-    if (!undead_mutation_rot())
-        return false;
+    if (you.can_safely_mutate())
+        return true;
 
     if (reason)
     {
         *reason = make_stringf("You cannot mutate%s.",
-                               !you.undead_state(false) ? " at present" : "");
+                               you.can_safely_mutate(false) ? "" : " at present");
     }
-    return true;
+    return false;
 }
-
-class PotionCureMutation : public PotionEffect
-{
-private:
-    PotionCureMutation() : PotionEffect(POT_CURE_MUTATION) { }
-    DISALLOW_COPY_AND_ASSIGN(PotionCureMutation);
-public:
-    static const PotionCureMutation &instance()
-    {
-        static PotionCureMutation inst; return inst;
-    }
-
-    bool can_quaff(string *reason = nullptr) const override
-    {
-        if (_disallow_mutate(reason))
-            return false;
-
-        if (!how_mutated(false, false, false))
-        {
-            if (reason)
-            {
-                *reason = make_stringf("You have no %smutations to cure!",
-                                       how_mutated(false, false, true)
-                                       ? "permanent " : "");
-            }
-            return false;
-        }
-        return true;
-    }
-
-    bool quaff(bool was_known) const override
-    {
-        if (was_known && !check_known_quaff())
-            return false;
-
-        if (was_known
-            && how_mutated(false, true) > how_mutated(false, true, false)
-            && !yesno("Your transient mutations will not be cured; Quaff anyway?",
-                      false, 'n'))
-        {
-            canned_msg(MSG_OK);
-            return false;
-        }
-        effect();
-        return true;
-    }
-
-    bool effect(bool=true, int=40, bool=true) const override
-    {
-        mpr("It has a very clean taste.");
-        bool mutated = false;
-        for (int i = 0; i < 7; i++)
-        {
-            if (random2(9) >= i)
-            {
-                mutated |= delete_mutation(RANDOM_MUTATION,
-                                           "potion of cure mutation", false);
-            }
-        }
-        return mutated;
-    }
-};
-
-class PotionMutation : public PotionEffect
-{
-private:
-    PotionMutation() : PotionEffect(POT_MUTATION) { }
-    DISALLOW_COPY_AND_ASSIGN(PotionMutation);
-public:
-    static const PotionMutation &instance()
-    {
-        static PotionMutation inst; return inst;
-    }
-
-    bool can_quaff(string *reason = nullptr) const override
-    {
-        if (_disallow_mutate(reason))
-            return false;
-        return true;
-    }
-
-    bool effect(bool=true, int=40, bool=true) const override
-    {
-        mpr("You feel extremely strange.");
-        bool mutated = false;
-        for (int i = 0; i < 3; i++)
-            mutated |= mutate(RANDOM_MUTATION, "potion of mutation", false);
-
-        learned_something_new(HINT_YOU_MUTATED);
-        return mutated;
-    }
-
-    bool quaff(bool was_known) const override
-    {
-        if (was_known && !check_known_quaff())
-            return false;
-
-        string msg = "Really drink that potion of mutation";
-        msg += you.rmut_from_item() ? " while resistant to mutation?" : "?";
-        if (was_known && (you_worship(GOD_ZIN) || you.rmut_from_item())
-            && !yesno(msg.c_str(), false, 'n'))
-        {
-            canned_msg(MSG_OK);
-            return false;
-        }
-
-        effect();
-        // Zin conduct is violated even if you get lucky and don't mutate
-        did_god_conduct(DID_DELIBERATE_MUTATING, 10, was_known);
-        return true;
-    }
-};
-
-class PotionBeneficialMutation : public PotionEffect
-{
-private:
-    PotionBeneficialMutation() : PotionEffect(POT_BENEFICIAL_MUTATION) { }
-    DISALLOW_COPY_AND_ASSIGN(PotionBeneficialMutation);
-public:
-    static const PotionBeneficialMutation &instance()
-    {
-        static PotionBeneficialMutation inst; return inst;
-    }
-
-    bool can_quaff(string *reason = nullptr) const override
-    {
-        if (_disallow_mutate(reason))
-            return false;
-        return true;
-    }
-
-    bool effect(bool = true, int = 40, bool=true) const override
-    {
-        const bool mutated = mutate(RANDOM_GOOD_MUTATION,
-                                    "potion of beneficial mutation",
-                                    true, false, false, true);
-        if (undead_mutation_rot())
-        {
-            mpr("You feel dead inside.");
-            return mutated;
-        }
-
-        if (mutated)
-            mpr("You feel fantastic!");
-        else
-            mpr("You feel fantastic for a moment.");
-        learned_something_new(HINT_YOU_MUTATED);
-        return mutated;
-    }
-
-    bool quaff(bool was_known) const override
-    {
-        if (was_known && !check_known_quaff())
-            return false;
-
-        // Beneficial mutations go rMut, so don't prompt in this case.
-        if (was_known && you_worship(GOD_ZIN)
-            && !yesno("Really drink that potion of beneficial mutation?",
-                      false, 'n'))
-        {
-            canned_msg(MSG_OK);
-            return false;
-        }
-
-        effect(was_known);
-        // Zin conduct is violated even if you get lucky and don't mutate
-        did_god_conduct(DID_DELIBERATE_MUTATING, 10, was_known);
-        return true;
-    }
-};
 
 class PotionResistance : public PotionEffect
 {
@@ -936,6 +757,101 @@ public:
         }
         else
             mpr("You feel woody for a moment.");
+        return true;
+    }
+};
+
+const int MIN_REMOVED = 2;
+const int MAX_REMOVED = 6;
+const int MIN_ADDED = 1;
+const int MAX_ADDED = 3;
+
+class PotionMutation : public PotionEffect
+{
+private:
+    PotionMutation() : PotionEffect(POT_MUTATION) { }
+    DISALLOW_COPY_AND_ASSIGN(PotionMutation);
+public:
+    static const PotionMutation &instance()
+    {
+        static PotionMutation inst; return inst;
+    }
+
+    bool can_quaff(string *reason = nullptr) const override
+    {
+        if (!_can_mutate(reason))
+            return false;
+
+        return true;
+    }
+
+    bool effect(bool = true, int = 40, bool = true) const override
+    {
+        mpr("You feel extremely strange.");
+        bool mutated = false;
+        int remove_mutations = random_range(MIN_REMOVED, MAX_REMOVED);
+        int add_mutations = random_range(MIN_ADDED, MAX_ADDED);
+
+        // Remove mutations.
+        for (int i = 0; i < remove_mutations; i++)
+            mutated |= delete_mutation(RANDOM_MUTATION, "potion of mutation", false);
+        // Add mutations.
+        for (int i = 0; i < add_mutations; i++)
+            mutated |= mutate(RANDOM_MUTATION, "potion of mutation", false);
+        // Always one good mutation.
+        mutated |= mutate(RANDOM_GOOD_MUTATION, "potion of mutation", false);
+
+        learned_something_new(HINT_YOU_MUTATED);
+        return mutated;
+    }
+
+
+    bool quaff(bool was_known) const override
+    {
+        if (was_known && !check_known_quaff())
+            return false;
+
+        string msg = "Really drink that potion of mutation";
+        msg += you.rmut_from_item() ? " while resistant to mutation?" : "?";
+        if (was_known && (you_worship(GOD_ZIN) || you.rmut_from_item())
+            && !yesno(msg.c_str(), false, 'n'))
+        {
+            canned_msg(MSG_OK);
+            return false;
+        }
+
+        effect();
+        // Zin conduct is violated even if you get lucky and don't mutate
+        did_god_conduct(DID_DELIBERATE_MUTATING, 10, was_known);
+        return true;
+    }
+};
+
+class PotionDegeneration : public PotionEffect
+{
+private:
+    PotionDegeneration() : PotionEffect(POT_DEGENERATION) { }
+    DISALLOW_COPY_AND_ASSIGN(PotionDegeneration);
+public:
+    static const PotionDegeneration &instance()
+    {
+        static PotionDegeneration inst; return inst;
+    }
+
+    bool effect(bool=true, int=40, bool=true) const override
+    {
+        mpr("There was something very wrong with that liquid.");
+        bool success = false;
+        for (int i = 0; i < NUM_STATS; ++i)
+            if (lose_stat(static_cast<stat_type>(i), 1 + random2(3)))
+                success = true;
+        return success;
+    }
+
+    bool quaff(bool was_known) const override
+    {
+        if (effect())
+            xom_is_stimulated( 50 / _xom_factor(was_known));
         return true;
     }
 };
@@ -1108,7 +1024,7 @@ public:
     bool effect(bool=true, int=40, bool=true) const override
     {
         if (you.species == SP_VAMPIRE
-            || player_mutation_level(MUT_CARNIVOROUS) == 3)
+            || you.get_mutation_level(MUT_CARNIVOROUS) == 3)
         {
             mpr("Blech - that potion was really gluggy!");
         }
@@ -1204,36 +1120,127 @@ public:
         return nothing_happens;
     }
 };
-#endif
 
-class PotionDegeneration : public PotionEffect
+class PotionCureMutation : public PotionEffect
 {
 private:
-    PotionDegeneration() : PotionEffect(POT_DEGENERATION) { }
-    DISALLOW_COPY_AND_ASSIGN(PotionDegeneration);
+    PotionCureMutation() : PotionEffect(POT_CURE_MUTATION) { }
+    DISALLOW_COPY_AND_ASSIGN(PotionCureMutation);
 public:
-    static const PotionDegeneration &instance()
+    static const PotionCureMutation &instance()
     {
-        static PotionDegeneration inst; return inst;
+        static PotionCureMutation inst; return inst;
     }
 
-    bool effect(bool=true, int=40, bool=true) const override
+    bool can_quaff(string *reason = nullptr) const override
     {
-        mpr("There was something very wrong with that liquid.");
-        bool success = false;
-        for (int i = 0; i < NUM_STATS; ++i)
-            if (lose_stat(static_cast<stat_type>(i), 1 + random2(3)))
-                success = true;
-        return success;
+        if (!_can_mutate(reason))
+            return false;
+
+        if (!you.how_mutated(false, false, false))
+        {
+            if (reason)
+            {
+                *reason = make_stringf("You have no %smutations to cure!",
+                                       you.how_mutated(false, false, true)
+                                       ? "permanent " : "");
+            }
+            return false;
+        }
+        return true;
     }
 
     bool quaff(bool was_known) const override
     {
-        if (effect())
-            xom_is_stimulated( 50 / _xom_factor(was_known));
+        if (was_known && !check_known_quaff())
+            return false;
+
+        if (was_known
+            && you.how_mutated(false, true) > you.how_mutated(false, true, false)
+            && !yesno("Your transient mutations will not be cured; Quaff anyway?",
+                      false, 'n'))
+        {
+            canned_msg(MSG_OK);
+            return false;
+        }
+        effect();
+        return true;
+    }
+
+    bool effect(bool=true, int=40, bool=true) const override
+    {
+        mpr("It has a very clean taste.");
+        bool mutated = false;
+        for (int i = 0; i < 7; i++)
+        {
+            if (random2(9) >= i)
+            {
+                mutated |= delete_mutation(RANDOM_MUTATION,
+                                           "potion of mutation", false);
+            }
+        }
+        return mutated;
+    }
+};
+
+class PotionBeneficialMutation : public PotionEffect
+{
+private:
+    PotionBeneficialMutation() : PotionEffect(POT_BENEFICIAL_MUTATION) { }
+    DISALLOW_COPY_AND_ASSIGN(PotionBeneficialMutation);
+public:
+    static const PotionBeneficialMutation &instance()
+    {
+        static PotionBeneficialMutation inst; return inst;
+    }
+
+    bool can_quaff(string *reason = nullptr) const override
+    {
+        if (!_can_mutate(reason))
+            return false;
+        return true;
+    }
+
+    bool effect(bool = true, int = 40, bool=true) const override
+    {
+        const bool mutated = mutate(RANDOM_GOOD_MUTATION,
+                                    "potion of mutation",
+                                    true, false, false, true);
+        if (undead_mutation_rot())
+        {
+            mpr("You feel dead inside.");
+            return mutated;
+        }
+
+        if (mutated)
+            mpr("You feel fantastic!");
+        else
+            mpr("You feel fantastic for a moment.");
+        learned_something_new(HINT_YOU_MUTATED);
+        return mutated;
+    }
+
+    bool quaff(bool was_known) const override
+    {
+        if (was_known && !check_known_quaff())
+            return false;
+
+        // Beneficial mutations go rMut, so don't prompt in this case.
+        if (was_known && you_worship(GOD_ZIN)
+            && !yesno("Really drink that potion of mutation?",
+                      false, 'n'))
+        {
+            canned_msg(MSG_OK);
+            return false;
+        }
+
+        effect(was_known);
+        // Zin conduct is violated even if you get lucky and don't mutate
+        did_god_conduct(DID_DELIBERATE_MUTATING, 10, was_known);
         return true;
     }
 };
+#endif
 
 // placeholder 'buggy' potion
 class PotionStale : public PotionEffect
@@ -1289,7 +1296,9 @@ static const PotionEffect* potion_effects[] =
     &PotionPoison::instance(),
 #endif
     &PotionBerserk::instance(),
+#if TAG_MAJOR_VERSION == 34
     &PotionCureMutation::instance(),
+#endif
     &PotionMutation::instance(),
     &PotionResistance::instance(),
     &PotionBlood::instance(),
@@ -1297,7 +1306,9 @@ static const PotionEffect* potion_effects[] =
     &PotionBloodCoagulated::instance(),
 #endif
     &PotionLignify::instance(),
+#if TAG_MAJOR_VERSION == 34
     &PotionBeneficialMutation::instance(),
+#endif
     &PotionStale::instance()
 };
 

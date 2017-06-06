@@ -11,24 +11,12 @@
 #include "mon-util.h"
 #include "mutant-beast.h"
 #include "options.h"
+#include "tile-flags.h"
 #include "tiledef-player.h"
 #include "tilepick.h"
 #include "tilepick-p.h"
 
 mcache_manager mcache;
-
-// Used internally for streaming.
-enum mcache_type
-{
-    MCACHE_MONSTER,
-    MCACHE_DRACO,
-    MCACHE_GHOST,
-    MCACHE_DEMON,
-    MCACHE_MBEAST,
-    MCACHE_MAX,
-
-    MCACHE_nullptr,
-};
 
 struct demon_data
 {
@@ -374,6 +362,7 @@ bool mcache_monster::get_weapon_offset(tileidx_t mon_tile,
     case TILEP_MONS_ORC_WARLORD:
     case TILEP_MONS_BIG_KOBOLD:
     case TILEP_MONS_EFREET:
+    case TILEP_MONS_VAMPIRE_MAGE:
         *ofs_x = -3;
         *ofs_y = 0;
         break;
@@ -862,6 +851,11 @@ bool mcache_monster::get_shield_offset(tileidx_t mon_tile,
     case TILEP_MONS_ANCESTOR_KNIGHT:
         *ofs_x = -1;
         *ofs_y = -1;
+        break;
+
+    case TILEP_MONS_GNOLL:
+        *ofs_x = -1;
+        *ofs_y = 1;
         break;
 
     case TILEP_MONS_TWO_HEADED_OGRE: // second weapon

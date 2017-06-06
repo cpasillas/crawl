@@ -1,5 +1,4 @@
-#ifndef TAG_VERSION_H
-#define TAG_VERSION_H
+#pragma once
 
 // Character info has its own top-level tag, mismatching majors don't break
 // compatibility there.
@@ -7,6 +6,7 @@
 // the save browser across versions, possibly leading to overwritten games.
 // It's only there in case there's no way out.
 #define TAG_CHR_FORMAT 0
+COMPILE_CHECK(TAG_CHR_FORMAT < 256);
 
 // Let CDO updaters know if the syntax changes.
 // Really, really, REALLY _never_ ever bump this and clean up old #ifdefs
@@ -15,6 +15,7 @@
 #ifndef TAG_MAJOR_VERSION
 #define TAG_MAJOR_VERSION 34
 #endif
+COMPILE_CHECK(TAG_MAJOR_VERSION < 256);
 
 // Minor version will be reset to zero when major version changes.
 enum tag_minor_version
@@ -202,6 +203,14 @@ enum tag_minor_version
     TAG_MINOR_NEMELEX_WRATH,       // Nemelex loses the passive wrath component
     TAG_MINOR_SLIME_WALL_CLEAR,    // Turn existing Slime:$ walls clear, so they'll be removed on TRJ death.
     TAG_MINOR_FOOD_PURGE_RELOADED, // The exciting sequel, removing pizza/jerky.
+    TAG_MINOR_ELYVILON_WRATH,      // Make Elyvilon wrath expire with XP gain.
+    TAG_MINOR_DESOLATION_GLOBAL,   // Recover from saves where desolation is incorrectly marked as global
+    TAG_MINOR_NO_MORE_LORC,        // Don't save lava orc temperature (or anything else). LO/Dj removal.
+    TAG_MINOR_NO_ITEM_TRANSIT,     // Remove code to transit items across levels.
+    TAG_MINOR_TOMB_HATCHES,        // Use fixed-destination hatches in Tomb.
+    TAG_MINOR_TRANSPORTERS,        // Transporters and position marker changes.
+    TAG_MINOR_SPIT_POISON_AGAIN_AGAIN, // save compat issues for TAG_MINOR_SPIT_POISON_AGAIN.
+
 #endif
     NUM_TAG_MINORS,
     TAG_MINOR_VERSION = NUM_TAG_MINORS - 1
@@ -209,5 +218,3 @@ enum tag_minor_version
 
 // Marshalled as a byte in several places.
 COMPILE_CHECK(TAG_MINOR_VERSION <= 0xff);
-
-#endif

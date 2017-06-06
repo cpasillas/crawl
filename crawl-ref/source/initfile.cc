@@ -23,6 +23,7 @@
 #include "chardump.h"
 #include "clua.h"
 #include "colour.h"
+#include "confirm-butcher-type.h"
 #include "defines.h"
 #include "delay.h"
 #include "directn.h"
@@ -47,6 +48,7 @@
 #include "playable.h"
 #include "player.h"
 #include "prompt.h"
+#include "slot-select-mode.h"
 #include "species.h"
 #include "spl-util.h"
 #include "stash.h"
@@ -60,6 +62,7 @@
 #include "version.h"
 #include "viewchar.h"
 #include "view.h"
+#include "wizard-option-type.h"
 #ifdef USE_TILE
 #include "tilepick.h"
 #include "tiledef-player.h"
@@ -67,6 +70,7 @@
 #include "tileweb.h"
 #endif
 #endif
+
 
 // For finding the executable's path
 #ifdef TARGET_OS_WINDOWS
@@ -159,18 +163,23 @@ const vector<GameOption*> game_options::build_options_list()
         new BoolGameOption(SIMPLE_NAME(easy_door), true),
         new BoolGameOption(SIMPLE_NAME(warn_hatches), false),
         new BoolGameOption(SIMPLE_NAME(enable_recast_spell), true),
-        new BoolGameOption(SIMPLE_NAME(auto_butcher), false),
         new BoolGameOption(SIMPLE_NAME(easy_eat_chunks), false),
         new BoolGameOption(SIMPLE_NAME(auto_eat_chunks), true),
         new BoolGameOption(SIMPLE_NAME(blink_brightens_background), false),
         new BoolGameOption(SIMPLE_NAME(bold_brightens_foreground), false),
-        new BoolGameOption(SIMPLE_NAME(best_effort_brighten_background), true),
+        new BoolGameOption(SIMPLE_NAME(best_effort_brighten_background), false),
+#ifdef TARGET_OS_MACOSX
+        new BoolGameOption(SIMPLE_NAME(best_effort_brighten_foreground), false),
+        new BoolGameOption(SIMPLE_NAME(allow_extended_colours), true),
+#else
         new BoolGameOption(SIMPLE_NAME(best_effort_brighten_foreground), true),
         new BoolGameOption(SIMPLE_NAME(allow_extended_colours), false),
+#endif
         new BoolGameOption(SIMPLE_NAME(regex_search), false),
         new BoolGameOption(SIMPLE_NAME(autopickup_search), false),
         new BoolGameOption(SIMPLE_NAME(show_newturn_mark), true),
         new BoolGameOption(SIMPLE_NAME(show_game_time), true),
+        new BoolGameOption(SIMPLE_NAME(equip_bar), false),
         new BoolGameOption(SIMPLE_NAME(mouse_input), false),
         new BoolGameOption(SIMPLE_NAME(mlist_allow_alternate_layout), false),
         new BoolGameOption(SIMPLE_NAME(messages_at_top), false),
@@ -210,6 +219,8 @@ const vector<GameOption*> game_options::build_options_list()
         new BoolGameOption(SIMPLE_NAME(arena_dump_msgs_all), false),
         new BoolGameOption(SIMPLE_NAME(arena_list_eq), false),
         new BoolGameOption(SIMPLE_NAME(default_manual_training), false),
+        new BoolGameOption(SIMPLE_NAME(one_SDL_sound_channel), false),
+        new BoolGameOption(SIMPLE_NAME(sounds_on), true),
         new ColourGameOption(SIMPLE_NAME(tc_reachable), BLUE),
         new ColourGameOption(SIMPLE_NAME(tc_excluded), LIGHTMAGENTA),
         new ColourGameOption(SIMPLE_NAME(tc_exclude_circle), RED),
@@ -278,6 +289,7 @@ const vector<GameOption*> game_options::build_options_list()
                                   "50:yellow, 25:red", _first_greater),
         new ColourThresholdOption(stat_colour, {"stat_colour", "stat_color"},
                                   "3:red", _first_less),
+        new StringGameOption(SIMPLE_NAME(sound_file_path), ""),
 #ifdef DGL_SIMPLE_MESSAGING
         new BoolGameOption(SIMPLE_NAME(messaging), false),
 #endif
@@ -331,6 +343,7 @@ const vector<GameOption*> game_options::build_options_list()
         new TileColGameOption(SIMPLE_NAME(tile_trap_col), "#aa6644"),
         new TileColGameOption(SIMPLE_NAME(tile_unseen_col), "black"),
         new TileColGameOption(SIMPLE_NAME(tile_upstairs_col), "cyan"),
+        new TileColGameOption(SIMPLE_NAME(tile_transporter_col), "#ffa500"),
         new TileColGameOption(SIMPLE_NAME(tile_wall_col), "#666666"),
         new TileColGameOption(SIMPLE_NAME(tile_water_col), "#114455"),
         new TileColGameOption(SIMPLE_NAME(tile_window_col), "#558855"),
@@ -469,11 +482,11 @@ static msg_colour_type _str_to_channel_colour(const string &str)
 
 static const string message_channel_names[] =
 {
-    "plain", "friend_action", "prompt", "god", "pray", "duration", "danger",
-    "warning", "food", "recovery", "sound", "talk", "talk_visual",
-    "intrinsic_gain", "mutation", "monster_spell", "monster_enchant",
-    "friend_spell", "friend_enchant", "monster_damage", "monster_target",
-    "banishment", "rotten_meat", "equipment", "floor", "multiturn", "examine",
+    "plain", "friend_action", "prompt", "god", "duration", "danger", "warning",
+    "food", "recovery", "sound", "talk", "talk_visual", "intrinsic_gain",
+    "mutation", "monster_spell", "monster_enchant", "friend_spell",
+    "friend_enchant", "monster_damage", "monster_target", "banishment",
+    "rotten_meat", "equipment", "floor", "multiturn", "examine",
     "examine_filter", "diagnostic", "error", "tutorial", "orb", "timed_portal",
     "hell_effect", "monster_warning", "dgl_message",
 };
@@ -1013,6 +1026,7 @@ void game_options::reset_options()
     autopickups.set(OBJ_FOOD);
 
     confirm_butcher        = CONFIRM_AUTO;
+    auto_butcher           = HS_VERY_HUNGRY;
     easy_confirm           = CONFIRM_SAFE_EASY;
     allow_self_target      = CONFIRM_PROMPT;
     skill_focus            = SKM_FOCUS_ON;
@@ -1032,7 +1046,7 @@ void game_options::reset_options()
 
     explore_stop           = (ES_ITEM | ES_STAIR | ES_PORTAL | ES_BRANCH
                               | ES_SHOP | ES_ALTAR | ES_RUNED_DOOR
-                              | ES_GREEDY_PICKUP_SMART
+                              | ES_TRANSPORTER | ES_GREEDY_PICKUP_SMART
                               | ES_GREEDY_VISITED_ITEM_STACK);
 
     dump_kill_places       = KDO_ONE_PLACE;
@@ -2094,6 +2108,8 @@ int game_options::read_explore_stop_conditions(const string &field) const
             conditions |= ES_ALTAR;
         else if (c == "runed_door")
             conditions |= ES_RUNED_DOOR;
+        else if (c == "transporter")
+            conditions |= ES_TRANSPORTER;
         else if (c == "greedy_item" || c == "greedy_items")
             conditions |= ES_GREEDY_ITEM;
         else if (c == "greedy_visited_item_stack")
@@ -2488,7 +2504,7 @@ void game_options::read_option_line(const string &str, bool runscript)
         && key != "race" && key != "class" && key != "ban_pickup"
         && key != "autopickup_exceptions"
         && key != "explore_stop_pickup_ignore"
-        && key != "stop_travel" && key != "sound"
+        && key != "stop_travel"
         && key != "force_more_message"
         && key != "flash_screen_message"
         && key != "confirm_action"
@@ -2507,6 +2523,7 @@ void game_options::read_option_line(const string &str, bool runscript)
         && key != "spell_slot"
         && key != "item_slot"
         && key != "ability_slot"
+        && key != "sound" && key != "hold_sound" && key != "sound_file_path"
         && key.find("font") == string::npos)
     {
         lowercase(field);
@@ -2596,6 +2613,25 @@ void game_options::read_option_line(const string &str, bool runscript)
             confirm_butcher = CONFIRM_NEVER;
         else if (field == "auto")
             confirm_butcher = CONFIRM_AUTO;
+    }
+    else if (key == "auto_butcher")
+    {
+        if (field == "true" || field == "engorged")
+            auto_butcher = HS_ENGORGED;
+        else if (field == "very full")
+            auto_butcher = HS_VERY_FULL;
+        else if (field == "full")
+            auto_butcher = HS_FULL;
+        else if (field == "satiated")
+            auto_butcher = HS_SATIATED;
+        else if (field == "hungry")
+            auto_butcher = HS_HUNGRY;
+        else if (field == "very hungry")
+            auto_butcher = HS_VERY_HUNGRY;
+        else if (field == "near starving")
+            auto_butcher = HS_NEAR_STARVING;
+        else if (field == "false" || field == "starving")
+            auto_butcher = HS_STARVING;
     }
     else if (key == "lua_file" && runscript)
     {
@@ -3104,7 +3140,7 @@ void game_options::read_option_line(const string &str, bool runscript)
         else
             explore_stop |= new_conditions;
     }
-    else if (key == "sound")
+    else if (key == "sound" || key == "hold_sound")
     {
         if (plain)
             sound_mappings.clear();
@@ -3117,7 +3153,12 @@ void game_options::read_option_line(const string &str, bool runscript)
             {
                 sound_mapping entry;
                 entry.pattern = sub.substr(0, cpos);
-                entry.soundfile = sub.substr(cpos + 1);
+                entry.soundfile = sound_file_path + sub.substr(cpos + 1);
+                if (key == "hold_sound")
+                    entry.interrupt_game = true;
+                else
+                    entry.interrupt_game = false;
+
                 if (minus_equal)
                     remove_matching(sound_mappings, entry);
                 else
@@ -3692,6 +3733,7 @@ enum commandline_option_type
     CLO_MORGUE,
     CLO_MACRO,
     CLO_MAPSTAT,
+    CLO_MAPSTAT_DUMP_DISCONNECT,
     CLO_OBJSTAT,
     CLO_ITERATIONS,
     CLO_ARENA,
@@ -3731,9 +3773,9 @@ static const char *cmd_ops[] =
 {
     "scores", "name", "species", "background", "dir", "rc",
     "rcdir", "tscores", "vscores", "scorefile", "morgue", "macro",
-    "mapstat", "objstat", "iters", "arena", "dump-maps", "test", "script",
-    "builddb", "help", "version", "seed", "save-version", "sprint",
-    "extra-opt-first", "extra-opt-last", "sprint-map", "edit-save",
+    "mapstat", "dump-disconnect", "objstat", "iters", "arena", "dump-maps",
+    "test", "script", "builddb", "help", "version", "seed", "save-version",
+    "sprint", "extra-opt-first", "extra-opt-last", "sprint-map", "edit-save",
     "print-charset", "tutorial", "wizard", "explore", "no-save",
     "gdb", "no-gdb", "nogdb", "throttle", "no-throttle",
     "playable-json",
@@ -4039,6 +4081,7 @@ static void _write_minimap_colours()
     _write_vcolour("tile_door_col", Options.tile_door_col);
     _write_vcolour("tile_downstairs_col", Options.tile_downstairs_col);
     _write_vcolour("tile_upstairs_col", Options.tile_upstairs_col);
+    _write_vcolour("tile_transporter_col", Options.tile_transporter_col);
     _write_vcolour("tile_branchstairs_col", Options.tile_branchstairs_col);
     _write_vcolour("tile_portal_col", Options.tile_portal_col);
     _write_vcolour("tile_feature_col", Options.tile_feature_col);
@@ -4148,6 +4191,11 @@ static bool _check_extra_opt(char* _opt)
 bool parse_args(int argc, char **argv, bool rc_only)
 {
     COMPILE_CHECK(ARRAYSZ(cmd_ops) == CLO_NOPS);
+
+#ifndef DEBUG_STATISTICS
+    const char *dbg_stat_err = "mapstat and objstat are available only in "
+                               "DEBUG_STATISTICS builds.\n";
+#endif
 
     if (crawl_state.command_line_arguments.empty())
     {
@@ -4319,8 +4367,14 @@ bool parse_args(int argc, char **argv, bool rc_only)
             }
             break;
 #else
-            fprintf(stderr, "mapstat and objstat are available only in "
-                    "DEBUG_STATISTICS builds.\n");
+            fprintf(stderr, "%s", dbg_stat_err);
+            end(1);
+#endif
+        case CLO_MAPSTAT_DUMP_DISCONNECT:
+#ifdef DEBUG_STATISTICS
+            crawl_state.map_stat_dump_disconnect = true;
+#else
+            fprintf(stderr, "%s", dbg_stat_err);
             end(1);
 #endif
         case CLO_ITERATIONS:
@@ -4340,8 +4394,7 @@ bool parse_args(int argc, char **argv, bool rc_only)
                 nextUsed = true;
             }
 #else
-            fprintf(stderr, "mapstat and objstat are available only in "
-                    "DEBUG_STATISTICS builds.\n");
+            fprintf(stderr, "%s", dbg_stat_err);
             end(1);
 #endif
             break;

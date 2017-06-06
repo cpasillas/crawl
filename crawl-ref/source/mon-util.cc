@@ -1711,6 +1711,11 @@ bool mons_class_can_use_stairs(monster_type mc)
            && mc != MONS_ROYAL_JELLY;
 }
 
+bool mons_class_can_use_transporter(monster_type mc)
+{
+    return !mons_is_tentacle_or_tentacle_segment(mc);
+}
+
 bool mons_can_use_stairs(const monster& mon, dungeon_feature_type stair)
 {
     if (!mons_class_can_use_stairs(mon.type))
@@ -5271,7 +5276,7 @@ bool choose_any_monster(const monster& mon)
 }
 
 // Find a nearby monster and return its index, including you as a
-// possibility with probability weight.  suitable() should return true
+// possibility with probability weight. suitable() should return true
 // for the type of monster wanted.
 // If prefer_named is true, named monsters (including uniques) are twice
 // as likely to get chosen compared to non-named ones.
@@ -5566,7 +5571,7 @@ int max_mons_charge(monster_type m)
 }
 
 // Deal out damage to nearby pain-bonded monsters based on the distance between them.
-void radiate_pain_bond(const monster& mon, int damage)
+void radiate_pain_bond(const monster& mon, int damage, const monster* original_target)
 {
     for (actor_near_iterator ai(mon.pos(), LOS_NO_TRANS); ai; ++ai)
     {
@@ -5591,7 +5596,16 @@ void radiate_pain_bond(const monster& mon, int damage)
         if (damage > 0)
         {
             behaviour_event(target, ME_ANNOY, &you, you.pos());
-            target->hurt(&you, damage, BEAM_SHARED_PAIN);
+
+            // save any potential cleanup of the original target for later
+            // (in `monster::hurt`).
+            if (target == original_target)
+                damage = target->hurt(&you, damage, BEAM_SHARED_PAIN, KILLED_BY_MONSTER, "", "", false);
+            else
+                damage = target->hurt(&you, damage, BEAM_SHARED_PAIN);
+
+            if (damage > 0)
+                radiate_pain_bond(*target, damage, original_target);
         }
     }
 }
@@ -5699,7 +5713,7 @@ static bool _apply_to_monsters(monster_func f, radius_iterator&& ri)
     for (; ri; ri++)
     {
         monster* mons = monster_at(*ri);
-        if (mons)
+        if (!invalid_monster(mons))
             affected_any = f(*mons) || affected_any;
     }
 

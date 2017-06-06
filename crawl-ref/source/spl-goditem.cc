@@ -7,6 +7,7 @@
 
 #include "spl-goditem.h"
 
+#include "cleansing-flame-source-type.h"
 #include "cloud.h"
 #include "coordit.h"
 #include "database.h"
@@ -19,13 +20,16 @@
 #include "invent.h"
 #include "item-prop.h"
 #include "items.h"
+#include "los.h"
 #include "mapdef.h"
 #include "mapmark.h"
+#include "map-knowledge.h"
 #include "message.h"
 #include "mon-behv.h"
 #include "mon-cast.h"
 #include "mon-death.h"
 #include "mon-tentacle.h"
+#include "mutation.h"
 #include "religion.h"
 #include "spl-util.h"
 #include "state.h"
@@ -325,8 +329,11 @@ static void _dispellable_player_buffs(player_debuff_effects &buffs)
 {
     // attributes
     static const attribute_type dispellable_attributes[] = {
-        ATTR_DELAYED_FIREBALL, ATTR_SWIFTNESS,
-        ATTR_REPEL_MISSILES, ATTR_DEFLECT_MISSILES,
+#if TAG_MAJOR_VERSION == 34
+        ATTR_DELAYED_FIREBALL,
+#endif
+        ATTR_REPEL_MISSILES,
+        ATTR_DEFLECT_MISSILES,
     };
 
     for (auto attribute : dispellable_attributes)
@@ -378,9 +385,11 @@ void debuff_player()
     for (auto attr : buffs.attributes)
     {
         you.attribute[attr] = 0;
+#if TAG_MAJOR_VERSION == 34
         if (attr == ATTR_DELAYED_FIREBALL)
             mprf(MSGCH_DURATION, "Your charged fireball dissipates.");
         else
+#endif
             need_msg = true;
     }
 
@@ -480,19 +489,25 @@ void debuff_monster(monster &mon)
 int detect_items(int pow)
 {
     int items_found = 0;
-    int map_radius;
+    int map_radius = 0;
     if (pow >= 0)
         map_radius = 7 + random2(7) + pow;
+
+    else if (you.has_mutation(MUT_STRONG_NOSE))
+        map_radius = get_los_radius();
     else
     {
+        if (you.has_mutation(MUT_JELLY_GROWTH))
+            map_radius = 5;
+        // Check which god may be providing detect_items and set map_radius
         if (have_passive(passive_t::detect_items))
         {
-            map_radius = min(you.piety / 20 - 1, LOS_RADIUS);
+            map_radius = max(map_radius,
+                             min(you.piety / 20 - 1, get_los_radius()));
+
             if (map_radius <= 0)
                 return 0;
         }
-        else // MUT_JELLY_GROWTH
-            map_radius = 5;
     }
 
     for (radius_iterator ri(you.pos(), map_radius, C_SQUARE); ri; ++ri)
@@ -530,11 +545,9 @@ static void _fuzz_detect_creatures(int pow, int *fuzz_radius, int *fuzz_chance)
         *fuzz_chance = 10;
 }
 
-static bool _mark_detected_creature(coord_def where, monster* mon,
+static void _mark_detected_creature(coord_def where, const monster& mon,
                                     int fuzz_chance, int fuzz_radius)
 {
-    bool found_good = false;
-
     if (fuzz_radius && x_chance_in_y(fuzz_chance, 100))
     {
         const int fuzz_diam = 2 * fuzz_radius + 1;
@@ -547,35 +560,17 @@ static bool _mark_detected_creature(coord_def where, monster* mon,
             place.set(where.x + random2(fuzz_diam) - fuzz_radius,
                       where.y + random2(fuzz_diam) - fuzz_radius);
 
-            if (!map_bounds(place))
-                continue;
-
-            // If the player would be able to see a monster at this location
-            // don't place it there.
-            if (you.see_cell(place))
-                continue;
-
-            // Try not to overwrite another detected monster.
-            if (env.map_knowledge(place).detected_monster())
-                continue;
-
-            // Don't print monsters on terrain they cannot pass through,
-            // not even if said terrain has since changed.
-            if (!env.map_knowledge(place).changed()
-                && mon->can_pass_through_feat(grd(place)))
+            // the player believes there is no monster there, and this one could be there
+            if (query_map_knowledge(false, place, [&mon](const map_cell& m) {
+                  return !m.detected_monster() && mon.can_pass_through_feat(m.feat());
+                }) && !you.see_cell(place))
             {
-                found_good = true;
-                break;
+                where = place;
             }
         }
-
-        if (found_good)
-            where = place;
     }
 
-    env.map_knowledge(where).set_detected_monster(mons_detected_base(mon->type));
-
-    return found_good;
+    env.map_knowledge(where).set_detected_monster(mons_detected_base(mon.type));
 }
 
 int detect_creatures(int pow, bool telepathic)
@@ -599,7 +594,7 @@ int detect_creatures(int pow, bool telepathic)
             if (!you.can_see(*mon))
             {
                 creatures_found++;
-                _mark_detected_creature(*ri, mon, fuzz_chance, fuzz_radius);
+                _mark_detected_creature(*ri, *mon, fuzz_chance, fuzz_radius);
             }
         }
     }
@@ -797,7 +792,7 @@ static bool _do_imprison(int pow, const coord_def& where, bool zin)
                         none_vis = false;
                     break;
                 }
-                else
+                else // the new position of the monster is now an additional veto spot for monsters
                     veto_spots.push_back(newpos);
             }
 
@@ -848,6 +843,7 @@ static bool _do_imprison(int pow, const coord_def& where, bool zin)
                 get_push_space(*ai, newpos, act, true, &veto_spots);
                 ASSERT(!newpos.origin());
                 act->move_to_pos(newpos);
+                // the new position of the monster is now an additional veto spot for monsters
                 veto_spots.push_back(newpos);
             }
         }
@@ -871,7 +867,7 @@ static bool _do_imprison(int pow, const coord_def& where, bool zin)
             if (igrd(*ai) != NON_ITEM)
             {
                 coord_def newpos;
-                get_push_space(*ai, newpos, nullptr, true);
+                get_push_space(*ai, newpos, nullptr, true, &adj_spots);
                 if (zin) // zin should've checked for this earlier
                     ASSERT(!newpos.origin());
                 else if (newpos.origin())  // tomb just skips the tile
@@ -1306,6 +1302,7 @@ spret_type cast_random_effects(int pow, bolt& beam, bool fail)
                                  ZAP_FIREBALL,
                                  ZAP_BOLT_OF_DRAINING,
                                  ZAP_VENOM_BOLT);
+    beam.origin_spell = SPELL_NO_SPELL; // let zapping reset this
 
     zapping(zap, pow, beam, false);
 

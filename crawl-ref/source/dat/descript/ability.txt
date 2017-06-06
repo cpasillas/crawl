@@ -65,10 +65,6 @@ substantially weakening melee attacks.
 While tranformed, any equipped weapons, armour and rings are melded, and the
 user becomes unable to evoke wands or to cast spells.
 %%%%
-Spit Acid ability
-
-Spits acid at a targeted creature.
-%%%%
 Fly ability
 
 Starts flight. During flight you can safely cross water and similar obstacles.
@@ -82,14 +78,9 @@ anyone adjacent, and are not affected by any means of protection, such as armour
 or resistances. However, certain creatures, usually those able to invoke
 damnation themselves, are entirely unscathed by damnation.
 %%%%
-Release Delayed Fireball ability
+Cancel Portal Projectile ability
 
-Instantly releases a previously prepared (delayed) fireball without additional
-cost in terms of magic or hunger.
-%%%%
-Stop Singing ability
-
-Stops singing your Song of Slaying.
+Ends your Portal Projectile status.
 %%%%
 Heal Wounds ability
 
@@ -107,10 +98,6 @@ Shaft Self ability
 
 Sends you to a random position one to two floors down, as if you jumped into a
 shaft trap. It takes some time to dig the shaft.
-%%%%
-Evoke Teleportation ability
-
-Teleports the user to a random location on the level.
 %%%%
 Evoke Blink ability
 
@@ -141,6 +128,10 @@ Evoke Fog ability
 
 Releases a thick cloud of fog to obscure vision.
 %%%%
+Evoke Ratskin ability
+
+Summons up to two dungeon rats to serve their master for a brief time.
+%%%%
 End Transformation ability
 
 Reverts you to your normal form.
@@ -148,7 +139,8 @@ Reverts you to your normal form.
 # Zin
 Recite ability
 
-Preaches to nearby monsters about Zin's laws for a short duration.
+Preaches to nearby monsters about Zin's laws for a short duration. After
+finishing a recitation, it cannot be repeated for a short time.
 
 The recitation will have different effects depending on the target: the chaotic
 and unclean will be affected by powerful and damaging effects, undead and
@@ -182,8 +174,9 @@ Cures all your mutations — but only once.
 Divine Shield ability
 
 Grants a temporary divine shield. Because it is held aloft by the Shining One's
-power, it does not interfere with your equipment. The strength and duration
-of the shield are increased by Invocations skill.
+power, it does not interfere with your equipment, but it functions otherwise as
+a normal, physical shield. The strength and duration of the shield are increased
+by Invocations skill.
 %%%%
 Cleansing Flame ability
 
@@ -335,7 +328,8 @@ Sends the user into a berserk rage. Going berserk temporarily increases health,
 speed, and damage dealt in melee. It will time out quickly outside of combat,
 but may be extended by multiple kills. While berserk, almost all actions other
 than movement and melee combat are prevented. When the rage expires, the user
-will be briefly slowed and occasionally may even pass out.
+will be briefly slowed and occasionally may even pass out, and will be unable
+to berserk again for a short time.
 %%%%
 Trog's Hand ability
 
@@ -545,12 +539,6 @@ while you're gone.
 Request Jelly ability
 
 Creates a neutral jelly that will wander the floor and digest items.
-%%%%
-Jelly Paralyse ability
-
-Calls on any nearby jellies to cease their item consumption and pray to Jiyva
-for a short duration, with a piety cost depending on the number of jellies that
-are affected.
 %%%%
 Slimify ability
 
@@ -786,9 +774,8 @@ Accepting a sacrifice will reset the timer to the standard length.
 Stomp ability
 
 Stomps down in time with the rhythm of the dance, sending a shockwave through
-all adjacent creatures. The shockwave deals damages the creatures it passes
-through in proportion to the creature's maximum health and the reveler's
-Invocations skill.
+all adjacent creatures. The shockwave damages each creature by a percentage of
+its maximum health, with the percentage increasing with Invocations skill.
 %%%%
 Line Pass ability
 
@@ -869,6 +856,20 @@ Ancestor Identity ability
 
 Recalls who your ancestor preferred to be known as, correcting their name and
 gender. This does not take any time.
+%%%%
+Serpent's Lash ability
+
+Allows you to move at supernatural speeds for a short distance, causing the
+next two movement actions taken to be instant. Martial attacks performed under
+the effect of Serpent's Lash are more effective.
+%%%%
+Heavenly Storm ability
+
+Invokes a storm of heavenly clouds. While the storm rages, striking enemies
+with martial attacks provides an increasing bonus to melee damage and accuracy.
+The bonus fades over time, and the storm lasts until the bonus has faded
+completely. The heavenly clouds prevent invisibility, and obscure the vision of
+those outside the storm.
 %%%%
 Hop ability
 

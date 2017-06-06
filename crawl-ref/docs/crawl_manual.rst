@@ -234,9 +234,15 @@ Place
   branch. The starting branch is called Dungeon, so that the place information
   will read "Dungeon:1" for a new character.
 
-Gold
-  Displays the number of gold pieces you have found. Gold is found scattered
-  around the dungeon, and is primarily used to buy items from shops.
+Noise
+  This is a colored bar indicating the loudness of noise that you heard on your
+  last turn. The color provides a rough guide to how far away the noise it
+  indicates might be audible. If the bar is gray, the sound is less likely to
+  be audible outside of your line of sight (at least in an open area); if it is
+  yellow, the sound is likely to be audible outside of your line of sight; and
+  if it is red, the sound will be audible at a substantial distance. If the bar
+  turns magenta, you have made one of the loudest noises in the dungeon. N.b.:
+  terrain can reduce or block the spread of noise.
 
 Time
   This indicates the amount of time that has passed since entering the dungeon,
@@ -361,8 +367,8 @@ a direction, will open/close doors, too.
 
 If there is no door in the indicated space, both Ctrl-direction and
 '*'-direction will attempt to attack any monster which may be standing there
-(this is the only way to attack a friendly creature hand-to-hand). If there is
-apparently nothing there, you will still attack it, just in case there's
+(this is the only way to attack a friendly creature with melee combat). If there
+is apparently nothing there, you will still attack it, just in case there's
 something invisible lurking around.
 
 A variety of dangerous and irritating traps are hidden around the dungeon. Traps
@@ -868,7 +874,7 @@ You can press '"' to quickly check what jewellery you're wearing.
 There are a number of types of magical staves. Some enhance your general
 spellcasting ability, while some greatly increase the power of a certain class
 of spells (and possibly reduce your effectiveness with others). Some can even be
-used in hand-to-hand combat, although with mediocre effectiveness unless you can
+used in melee combat, although with mediocre effectiveness unless you can
 harness their special power, using a combination of the Evocations skill and the
 skill specific to the staff's type. Staves which do not enhance a destructive
 magic school tend to have no combat powers at all.
@@ -1089,11 +1095,11 @@ Mutations can also be caused by specific potions, very rare trap effects, or
 spells cast by powerful enemies found deep in the dungeon. A few types of monsters
 have mutagenic corpses; these will appear in magenta by default.
 
-It is much more difficult to get rid of bad mutations than to get one. A lucky
-mutation attempt can actually remove mutations. However, the only sure-fire ways
-are to quaff a potion of cure mutation, which will attempt to remove one or more
-random mutations, or to join the gods Zin or Jivya, each of whom provides some
-remedy against mutations.
+It is more difficult to get rid of bad mutations than to get one. Using potions
+of mutations will remove a number of your current mutations, but will give you
+more mutations. These might be better to your taste. However, the only sure-fire
+ways is to join the gods Zin or Jiyva, each of whom provides some remedy against
+mutations.
 
 Demonspawn are a special case. Characters of this species get certain special
 mutations as they gain levels; these are listed in cyan. They are permanent and
@@ -1602,7 +1608,7 @@ Deep Elves
    underground. There, they developed their mental powers, evolving a natural
    gift for all forms of magic (including necromancy and earth magic), and
    adapted physically to their new environment, becoming shorter, weaker, and
-   losing all colouration. They are poor at hand-to-hand combat, but excellent
+   losing all colouration. They are poor at melee combat, but excellent
    at fighting from a distance.
 
 Felids
@@ -1624,15 +1630,16 @@ Felids
   Felids gain extra lives as they increase in levels. Upon death, they will be
   resurrected in a safe place, losing an experience level in the process.
 
-Barachians
-  Barachians are an amphibious humanoid race, said to be distantly related to
-  the Elves. Spawned in great numbers beneath the southern ice, their
-  Mother-Father sends them forth to destroy and pillage the civilized lands.
+Barachim
+  Barachim are an amphibious humanoid race, spawned at the dawn of time as
+  servants for the gods. Inevitably, they rebelled and fled into the mortal
+  world; but even uncounted years later, the darkness still flees at their
+  approach, remembering those who they once served.
 
-  Barachians' most remarkable trait is their grossly overmuscled legs, which
-  allow them to leap remarkable distances. When not leaping, they are somewhat
-  slow-moving and their attributes are poor, but they do have considerable
-  flexibility in skill choice.
+  Barachim's most remarkable trait is their grossly overmuscled legs, which
+  allow them to leap great distances. When not leaping, they are somewhat
+  slow-moving, and the long sight-lines that their heritage creates can be a
+  major disadvantage, but they can master almost any skill.
 
 Octopodes
   These land-capable relatives of common octopuses can move about as fast as
@@ -1668,7 +1675,7 @@ Formicids
   and magical sides. Their abilities have been used to tunnel immense underground
   communities and structures, many of which are tens of thousands of years old.
 
-  Perhaps unfortunately, their strong ties to to earth have left them completely
+  Perhaps unfortunately, their strong ties to earth have left them completely
   impervious to being teleported or hasted; Formicids are tied to the earth with
   a complete sense of stasis. While this is a seemingly bad property for a
   dungeon adventurer, stasis has the beneficial effect of preventing many types
@@ -1702,6 +1709,19 @@ Vine Stalkers
   magic quite competently and then switching to a hybrid style when their
   reserves start to run low, thus replenishing their shroud of magic and their
   spells' fuel with each voracious bite.
+
+Gnolls
+  Gnolls are a race of caniform humanoids hailing from the arid deserts and
+  grasslands of the east. With a variety of lurid tales told of them, others
+  avoid the Gnolls. Despite their isolation, Gnolls are unusually drawn to
+  the Dungeon.
+
+  Gnolls are quick to learn, picking up the basics of any skill within a
+  short period of time. Their attention wanes quickly, though, and they find it
+  more and more difficult to train a given skill the more practised they become
+  at it. Thus, Gnolls often prefer to dabble in a wide variety of fresh
+  and interesting skills. Their powerful noses indicate to them where treasures
+  lay hidden in the Dungeon.
 
 The Undead
 ========================================
@@ -1834,9 +1854,8 @@ Gladiators
 Monks
   The Monk is a member of an ascetic order dedicated to the perfection of one's
   body and soul through the discipline of the martial arts. Monks start with
-  very little equipment, but can survive without the weighty weapons and
-  spellbooks needed by characters of other backgrounds. When they choose a god
-  for the first time, their spiritual training gives them a piety boost.
+  only a simple weapon and a robe. When they choose a god for the first time,
+  their spiritual training gives them a piety boost.
 
 Berserkers
   Berserkers are hardy warriors who worship Trog the Wrathful, from whom they
@@ -1964,7 +1983,7 @@ help menu using '?%', and during character choice with '%'.
 Fighting skills
 ========================================
 
-Fighting is the basic skill used in ranged and hand-to-hand combat, and applies no matter
+Fighting is the basic skill used in ranged and melee combat, and applies no matter
 which weapon your character is wielding (if any). Fighting is also the skill
 that determines the number of hit points your character gets as they increase in
 levels (note that this is calculated so that you don't get a long run advantage

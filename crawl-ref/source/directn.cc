@@ -12,6 +12,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <functional>
 #include <sstream>
 
 #include "act-iter.h"
@@ -30,6 +31,7 @@
 #include "hints.h"
 #include "invent.h"
 #include "item-prop.h"
+#include "item-status-flag-type.h"
 #include "items.h"
 #include "libutil.h"
 #include "losglobal.h"
@@ -728,7 +730,7 @@ void full_describe_view()
             desc += "</" + colour_str +">) ";
 #endif
             desc += feature_description_at(c, false, DESC_A, false);
-            if (is_unknown_stair(c))
+            if (is_unknown_stair(c) || is_unknown_transporter(c))
                 desc += " (not visited)";
             FeatureMenuEntry *me = new FeatureMenuEntry(desc, c, hotkey);
             me->tag        = "description";
@@ -1747,7 +1749,7 @@ void direction_chooser::handle_wizard_command(command_type key_command,
         break;
 
     case CMD_TARGET_WIZARD_KILL_MONSTER:
-        monster_die(m, KILL_YOU, NON_MONSTER);
+        monster_die(*m, KILL_YOU, NON_MONSTER);
         break;
 
     default:
@@ -3042,7 +3044,7 @@ static vector<string> _get_monster_desc_vector(const monster_info& mi)
     if (you.duration[DUR_CONFUSING_TOUCH] && !you.weapon()
         || you.form == transformation::fungus && !mons_is_unbreathing(mi.type))
     {
-        descs.emplace_back(make_stringf("confuse odds on hit: %d%%",
+        descs.emplace_back(make_stringf("chance to confuse on hit: %d%%",
                                         melee_confuse_chance(mi.hd)));
     }
 
@@ -3103,7 +3105,10 @@ static string _get_monster_desc(const monster_info& mi)
         text += pronoun + " is clinging to the wall.\n";
 
     if (mi.is(MB_MESMERIZING))
-        text += "You are mesmerised by her song.\n";
+    {
+        text += string("You are mesmerised by ")
+              + mi.pronoun(PRONOUN_POSSESSIVE) + " song.\n";
+    }
 
     if (mi.is(MB_SLEEPING) || mi.is(MB_DORMANT))
     {
@@ -3175,8 +3180,8 @@ static string _get_monster_desc(const monster_info& mi)
     }
 
     text += _mon_enchantments_string(mi);
-    if (!text.empty() && text[text.size() - 1] == '\n')
-        text = text.substr(0, text.size() - 1);
+    if (!text.empty() && text.back() == '\n')
+        text.pop_back();
     return text;
 }
 

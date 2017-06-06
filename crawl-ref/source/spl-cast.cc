@@ -9,6 +9,7 @@
 
 #include <iomanip>
 #include <sstream>
+#include <cmath>
 
 #include "areas.h"
 #include "art-enum.h"
@@ -32,6 +33,7 @@
 #include "god-wrath.h"
 #include "hints.h"
 #include "item-prop.h"
+#include "item-status-flag-type.h"
 #include "item-use.h"
 #include "libutil.h"
 #include "macro.h"
@@ -323,12 +325,17 @@ int raw_spell_fail(spell_type spell)
     int chance = 60;
 
     // Don't cap power for failure rate purposes.
-    chance -= 6 * calc_spell_power(spell, false, true, false);
-    chance -= (you.intel() * 2);
+    // scale by 6, which I guess was chosen because it seems to work.
+    // realistic range for spellpower: -6 to -366 (before scale -1 to -61)
+    chance -= calc_spell_power(spell, false, true, false, 6);
+    chance -= (you.intel() * 2); // realistic range: -2 to -70
 
     const int armour_shield_penalty = player_armour_shield_spell_penalty();
     dprf("Armour+Shield spell failure penalty: %d", armour_shield_penalty);
-    chance += armour_shield_penalty;
+    chance += armour_shield_penalty; // range: 0 to 500 in extreme cases.
+                                     // A midlevel melee character in plate
+                                     // might have 40 or 50, and a caster in a
+                                     // robe would usually have 0.
 
     static const int difficulty_by_level[] =
     {
@@ -347,44 +354,31 @@ int raw_spell_fail(spell_type spell)
     };
     const int spell_level = spell_difficulty(spell);
     ASSERT_RANGE(spell_level, 0, (int) ARRAYSZ(difficulty_by_level));
-    chance += difficulty_by_level[spell_level];
+    chance += difficulty_by_level[spell_level]; // between 0 and 330
 
-#if TAG_MAJOR_VERSION == 34
-    // Only apply this penalty to Dj because other species lose nutrition
-    // rather than gaining contamination when casting spells.
-    // Also, this penalty gives fairly precise information about contam
-    // level, and only Dj already has such information (on the contam bar).
-    // Other species would have to check their failure rates all the time
-    // when at yellow glow.
-    if (you.species == SP_DJINNI)
-    {
-        int64_t contam = you.magic_contamination;
-        // Just +25 on the edge of yellow glow, +200 in the middle of yellow,
-        // forget casting when in orange.
-        chance += contam * contam * contam / 5000000000LL;
-    }
-#endif
-
-    int chance2 = chance;
-
-    const int chance_breaks[][2] =
-    {
-        {45, 45}, {42, 43}, {38, 41}, {35, 40}, {32, 38}, {28, 36},
-        {22, 34}, {16, 32}, {10, 30}, {2, 28}, {-7, 26}, {-12, 24},
-        {-18, 22}, {-24, 20}, {-30, 18}, {-38, 16}, {-46, 14},
-        {-60, 12}, {-80, 10}, {-100, 8}, {-120, 6}, {-140, 4},
-        {-160, 2}, {-180, 0}
-    };
-
-    for (const int (&cbrk)[2] : chance_breaks)
-        if (chance < cbrk[0])
-            chance2 = cbrk[1];
+    // This polynomial is a smoother approximation of a breakpoint-based
+    // calculation that originates pre-DCSS, mapping `chance` at this point to
+    // values from around 0 to around 45. (see
+    // https://crawl.develz.org/tavern/viewtopic.php?f=8&t=23414 for some of
+    // the history.)  It was calculated by |amethyst (based on one from minmay
+    // in that thread) and converted to integer values using 262144 as a
+    // convenient power of 2 denominator, then converted to its current form
+    // by Horner's rule, and then tweaked slightly.
+    //
+    // The regular (integer) polynomial form before Horner's rule is:
+    //          (x*x*x + 426*x*x + 82670*x + 7245398) / 262144
+    //
+    // https://www.wolframalpha.com/input/?i=graph+of+y%3D(((x+%2B+426)*x+%2B+82670)*x+%2B+7245398)+%2F+262144+and+y%3D100+and+x%3D125.1+with+x+from+-192+to+126.1
+    //
+    // If you think this is weird, you should see what was here before.
+    int chance2 = max((((chance + 426) * chance + 82670) * chance + 7245398)
+                      / 262144, 0);
 
     chance2 += get_form()->spellcasting_penalty;
 
-    chance2 -= 2 * player_mutation_level(MUT_SUBDUED_MAGIC);
-    chance2 += 4 * player_mutation_level(MUT_WILD_MAGIC);
-    chance2 += 4 * player_mutation_level(MUT_ANTI_WIZARDRY);
+    chance2 -= 2 * you.get_mutation_level(MUT_SUBDUED_MAGIC);
+    chance2 += 4 * you.get_mutation_level(MUT_WILD_MAGIC);
+    chance2 += 4 * you.get_mutation_level(MUT_ANTI_WIZARDRY);
 
     if (you.props.exists(SAP_MAGIC_KEY))
         chance2 += you.props[SAP_MAGIC_KEY].get_int() * 12;
@@ -394,19 +388,46 @@ int raw_spell_fail(spell_type spell)
     // Apply the effects of Vehumet and items of wizardry.
     chance2 = _apply_spellcasting_success_boosts(spell, chance2);
 
-    if (chance2 > 100)
-        chance2 = 100;
-
-    return chance2;
+    return min(max(chance2, 0), 100);
 }
 
-int stepdown_spellpower(int power)
+/*
+ * Given some spellpower in centis, do a stepdown at around 50 (5000 in centis)
+ * and return a rescaled value.
+ *
+ * @param power the input spellpower in centis.
+ * @param scale a value to scale the result by, between 1 and 1000. Default is
+ *        1, which returns a regular spellpower. 1000 gives you millis, 100
+ *        centis.
+ */
+int stepdown_spellpower(int power, int scale)
 {
-    return stepdown_value(power / 100, 50, 50, 150, 200);
+    // use millis internally
+    ASSERT_RANGE(scale, 1, 1000);
+    const int divisor = 1000 / scale;
+    int result = stepdown_value(power * 10, 50000, 50000, 150000, 200000)
+                    / divisor;
+    return result;
 }
 
+/*
+ * Calculate spell power.
+ *
+ * @param spell         the spell to check
+ * @param apply_intel   whether to include intelligence in the calculation
+ * @param fail_rate_check is this just a plain failure rate check or should it
+ *                      incorporate situational facts and mutations?
+ * @param cap_power     whether to apply the power cap for the spell (from
+ *                      `spell_power_cap(spell)`)
+ * @param scale         what scale to apply to the result internally?  This
+ *                      function has higher internal resolution than the default
+ *                      argument, so use this rather than dividing. This must be
+ *                      between 1 and 1000.
+ *
+ * @return the resulting spell power.
+ */
 int calc_spell_power(spell_type spell, bool apply_intel, bool fail_rate_check,
-                     bool cap_power)
+                     bool cap_power, int scale)
 {
     int power = 0;
 
@@ -439,8 +460,8 @@ int calc_spell_power(spell_type spell, bool apply_intel, bool fail_rate_check,
     // Wild magic boosts spell power but decreases success rate.
     if (!fail_rate_check)
     {
-        power *= (10 + 3 * player_mutation_level(MUT_WILD_MAGIC));
-        power /= (10 + 3 * player_mutation_level(MUT_SUBDUED_MAGIC));
+        power *= (10 + 3 * you.get_mutation_level(MUT_WILD_MAGIC));
+        power /= (10 + 3 * you.get_mutation_level(MUT_SUBDUED_MAGIC));
     }
 
     // Augmentation boosts spell power at high HP.
@@ -457,11 +478,13 @@ int calc_spell_power(spell_type spell, bool apply_intel, bool fail_rate_check,
         power /= 10 + (you.props[HORROR_PENALTY_KEY].get_int() * 3) / 2;
     }
 
-    power = stepdown_spellpower(power);
+    // at this point, `power` is assumed to be basically in centis.
+    // apply a stepdown, and scale.
+    power = stepdown_spellpower(power, scale);
 
     const int cap = spell_power_cap(spell);
     if (cap > 0 && cap_power)
-        power = min(power, cap);
+        power = min(power, cap * scale);
 
     return power;
 }
@@ -506,14 +529,6 @@ static int _spell_enhancement(spell_type spell)
 
     enhanced += you.archmagi();
     enhanced += player_equip_unrand(UNRAND_MAJIN);
-
-#if TAG_MAJOR_VERSION == 34
-    if (you.species == SP_LAVA_ORC && temperature_effect(LORC_LAVA_BOOST)
-        && (typeflags & SPTYP_FIRE) && (typeflags & SPTYP_EARTH))
-    {
-        enhanced++;
-    }
-#endif
 
     // These are used in an exponential way, so we'll limit them a bit. -- bwr
     if (enhanced > 3)
@@ -822,8 +837,8 @@ bool cast_a_spell(bool check_range, spell_type spell)
     {
         // None currently dock just piety, right?
         if (!yesno(god_loathes_spell(spell, you.religion) ?
-            "<lightred>Casting this spell will cause instant excommunication!"
-                "</lightred> Really cast?" :
+            "Casting this spell will cause instant excommunication! "
+            "Really cast?" :
             "Casting this spell will place you under penance. Really cast?",
             true, 'n'))
         {
@@ -854,18 +869,7 @@ bool cast_a_spell(bool check_range, spell_type spell)
         count_action(CACT_CAST, spell);
     }
 
-#if TAG_MAJOR_VERSION == 34
-    // Nasty special cases.
-    if (you.species == SP_DJINNI && cast_result == SPRET_SUCCESS
-        && (spell == SPELL_BORGNJORS_REVIVIFICATION
-         || spell == SPELL_SUBLIMATION_OF_BLOOD && you.hp == you.hp_max))
-    {
-        // These spells have replenished essence to full.
-        inc_mp(cost, true);
-    }
-    else // Redraw MP
-#endif
-        flush_mp();
+    flush_mp();
 
     if (!staff_energy && you.undead_state() != US_UNDEAD)
     {
@@ -1050,6 +1054,7 @@ static void _try_monster_cast(spell_type spell, int powc,
 
 static void _maybe_cancel_repeat(spell_type spell)
 {
+#if TAG_MAJOR_VERSION == 34
     switch (spell)
     {
     case SPELL_DELAYED_FIREBALL:        crawl_state.cant_cmd_repeat(make_stringf("You can't repeat %s.",
@@ -1059,6 +1064,7 @@ static void _maybe_cancel_repeat(spell_type spell)
     default:
         break;
     }
+#endif
 }
 
 static spret_type _do_cast(spell_type spell, int powc, const dist& spd,
@@ -1611,8 +1617,10 @@ static spret_type _do_cast(spell_type spell, int powc, const dist& spd,
     case SPELL_CALL_DOWN_DAMNATION:
         return cast_smitey_damnation(powc, beam) ? SPRET_SUCCESS : SPRET_ABORT;
 
+#if TAG_MAJOR_VERSION == 34
     case SPELL_DELAYED_FIREBALL:
         return cast_delayed_fireball(fail);
+#endif
 
     // LOS spells
 
@@ -1672,6 +1680,9 @@ static spret_type _do_cast(spell_type spell, int powc, const dist& spd,
 
     case SPELL_CLOUD_CONE:
         return cast_cloud_cone(&you, powc, target, fail);
+
+    case SPELL_IGNITION:
+        return cast_ignition(&you, powc, fail);
 
     // Summoning spells, and other spells that create new monsters.
     // If a god is making you cast one of these spells, any monsters
@@ -1816,9 +1827,6 @@ static spret_type _do_cast(spell_type spell, int powc, const dist& spd,
     // General enhancement.
     case SPELL_REGENERATION:
         return cast_regen(powc, fail);
-
-    case SPELL_REPEL_MISSILES:
-        return missile_prot(powc, fail);
 
     case SPELL_DEFLECT_MISSILES:
         return deflection(powc, fail);

@@ -502,7 +502,8 @@ void zappy(zap_type z_type, int power, bool is_monster, bolt &pbolt)
     if (dam_calc)
         pbolt.damage = (*dam_calc)(power);
 
-    pbolt.origin_spell = zap_to_spell(z_type);
+    if (pbolt.origin_spell == SPELL_NO_SPELL)
+        pbolt.origin_spell = zap_to_spell(z_type);
 
     if (z_type == ZAP_BREATHE_FIRE && you.species == SP_RED_DRACONIAN
         && !is_monster)
@@ -1653,7 +1654,7 @@ static bool _monster_resists_mass_enchantment(monster* mons,
     // Assuming that the only mass charm is control undead.
     if (wh_enchant == ENCH_CHARM)
     {
-        if (player_mutation_level(MUT_NO_LOVE))
+        if (you.get_mutation_level(MUT_NO_LOVE))
             return true;
 
         if (mons->friendly())
@@ -2027,7 +2028,7 @@ int silver_damages_victim(actor* victim, int damage, string &dmg_msg)
     {
         // For mutation damage, we want to count innate mutations for
         // demonspawn but not other species.
-        int multiplier = 5 * how_mutated(you.species == SP_DEMONSPAWN, true);
+        int multiplier = 5 * you.how_mutated(you.species == SP_DEMONSPAWN, true);
         if (multiplier == 0)
             return 0;
 
@@ -2308,6 +2309,10 @@ static void _unravelling_explode(bolt &beam)
 
 bool bolt::is_bouncy(dungeon_feature_type feat) const
 {
+    // Don't bounce off open sea.
+    if (feat_is_endless(feat))
+        return false;
+
     if (real_flavour == BEAM_CHAOS
         && feat_is_solid(feat))
     {
@@ -2686,9 +2691,6 @@ void bolt::affect_place_clouds()
     if (origin_spell == SPELL_POISONOUS_CLOUD)
         place_cloud(CLOUD_POISON, p, random2(5) + 3, agent());
 
-    if (origin_spell == SPELL_POISONOUS_CLOUD)
-        place_cloud(CLOUD_POISON, p, random2(2) + 1, agent());
-
     if (origin_spell == SPELL_HOLY_BREATH)
         place_cloud(CLOUD_HOLY, p, random2(4) + 2, agent());
 
@@ -2953,7 +2955,7 @@ bool bolt::harmless_to_player() const
 {
     dprf(DIAG_BEAM, "beam flavour: %d", flavour);
 
-    if (have_passive(passive_t::cloud_immunity) && is_big_cloud())
+    if (you.cloud_immune() && is_big_cloud())
         return true;
 
     switch (flavour)
@@ -2998,13 +3000,7 @@ bool bolt::harmless_to_player() const
         return you.res_petrify() || you.petrified();
 
     case BEAM_COLD:
-        return is_big_cloud() && you.mutation[MUT_FREEZING_CLOUD_IMMUNITY];
-
-#if TAG_MAJOR_VERSION == 34
-    case BEAM_FIRE:
-    case BEAM_STICKY_FLAME:
-        return you.species == SP_DJINNI;
-#endif
+        return is_big_cloud() && you.has_mutation(MUT_FREEZING_CLOUD_IMMUNITY);
 
     case BEAM_VIRULENCE:
         return player_res_poison(false) >= 3;
@@ -3334,7 +3330,6 @@ void bolt::affect_player_enchantment(bool resistible)
     case BEAM_HASTE:
         haste_player(40 + random2(ench_power));
         did_god_conduct(DID_HASTY, 10, blame_player);
-        contaminate_player(750 + random2(500), blame_player);
         obvious_effect = true;
         nasty = false;
         nice  = true;
@@ -3487,7 +3482,7 @@ void bolt::affect_player_enchantment(bool resistible)
         break;
 
     case BEAM_BERSERK:
-        you.go_berserk(blame_player, true);
+        you.go_berserk(blame_player);
         obvious_effect = true;
         break;
 
@@ -3566,7 +3561,7 @@ void bolt::affect_player_enchantment(bool resistible)
         if (!amount)
             break;
         mprf(MSGCH_WARN, "You feel your power leaking away.");
-        drain_mp(amount);
+        dec_mp(amount);
         if (agent() && (agent()->type == MONS_EYE_OF_DRAINING
                         || agent()->type == MONS_GHOST_MOTH))
         {
@@ -3791,7 +3786,7 @@ void bolt::affect_player()
             }
         }
 
-        if (you.mutation[MUT_JELLY_MISSILE]
+        if (you.has_mutation(MUT_JELLY_MISSILE)
             && you.hp < you.hp_max
             && !you.duration[DUR_DEATHS_DOOR]
             && item_is_jelly_edible(*item)
@@ -4273,7 +4268,7 @@ static void _glaciate_freeze(monster* mon, killer_type englaciator,
     simple_monster_message(*mon, " is frozen into a solid block of ice!");
 
     // If the monster leaves a corpse when it dies, destroy the corpse.
-    item_def* corpse = monster_die(mon, englaciator, kindex);
+    item_def* corpse = monster_die(*mon, englaciator, kindex);
     if (corpse)
         destroy_item(corpse->index());
 
@@ -4860,7 +4855,7 @@ void bolt::affect_monster(monster* mon)
         {
             if (mon->attitude == ATT_FRIENDLY)
                 mon->attitude = ATT_HOSTILE;
-            monster_die(mon, KILL_MON, kindex);
+            monster_die(*mon, KILL_MON, kindex);
         }
         else
         {
@@ -4870,7 +4865,7 @@ void bolt::affect_monster(monster* mon)
                 ref_killer = KILL_YOU_MISSILE;
                 kindex = YOU_FAULTLESS;
             }
-            monster_die(mon, ref_killer, kindex);
+            monster_die(*mon, ref_killer, kindex);
         }
     }
 
@@ -5782,7 +5777,7 @@ bool bolt::explode(bool show_more, bool hole_in_the_middle)
 {
     ASSERT(!special_explosion);
     ASSERT(!in_explosion_phase);
-    ASSERT(ex_size > 0);
+    ASSERT(ex_size >= 0);
 
     // explode() can be called manually without setting real_flavour.
     // FIXME: The entire flavour/real_flavour thing needs some
@@ -6046,47 +6041,37 @@ bool bolt::nasty_to(const monster* mon) const
     if (!is_enchantment())
         return true;
 
-    // Now for some non-hurtful enchantments.
-    if (flavour == BEAM_DIGGING)
-        return false;
-
     // Positive effects.
     if (nice_to(monster_info(mon)))
         return false;
 
-    // Co-aligned inner flame is fine.
-    if (flavour == BEAM_INNER_FLAME && mons_aligned(mon, agent()))
-        return false;
-
-    // Friendly and good neutral monsters don't mind being teleported.
-    if (flavour == BEAM_TELEPORT)
-        return !mon->wont_attack();
-
-    if (flavour == BEAM_ENSLAVE_SOUL || flavour == BEAM_INFESTATION)
-        return ench_flavour_affects_monster(flavour, mon);
-
-    // sleep
-    if (flavour == BEAM_HIBERNATION)
-        return mon->can_hibernate();
-
-    if (flavour == BEAM_SLOW || flavour == BEAM_PARALYSIS)
-        return !mon->stasis();
-
-    // dispel undead
-    if (flavour == BEAM_DISPEL_UNDEAD)
-        return bool(mon->holiness() & MH_UNDEAD);
-
-    if (flavour == BEAM_PAIN)
-        return mon->res_negative_energy() < 3;
-
-    if (flavour == BEAM_AGONY)
-        return !mon->res_torment();
-
-    if (flavour == BEAM_TUKIMAS_DANCE)
-        return tukima_affects(*mon);
-
-    if (flavour == BEAM_UNRAVELLING)
-        return monster_is_debuffable(*mon);
+    switch (flavour)
+    {
+        case BEAM_DIGGING:
+            return false;
+        case BEAM_INNER_FLAME:
+            // Co-aligned inner flame is fine.
+            return !mons_aligned(mon, agent());
+        case BEAM_TELEPORT:
+        case BEAM_BECKONING:
+            // Friendly and good neutral monsters don't mind being teleported.
+            return !mon->wont_attack();
+        case BEAM_ENSLAVE_SOUL:
+        case BEAM_INFESTATION:
+        case BEAM_SLOW:
+        case BEAM_PARALYSIS:
+        case BEAM_DISPEL_UNDEAD:
+        case BEAM_PAIN:
+        case BEAM_AGONY:
+        case BEAM_HIBERNATION:
+            return ench_flavour_affects_monster(flavour, mon);
+        case BEAM_TUKIMAS_DANCE:
+            return tukima_affects(*mon); // XXX: move to ench_flavour_affects?
+        case BEAM_UNRAVELLING:
+            return monster_is_debuffable(*mon); // XXX: as tukima's
+        default:
+            break;
+    }
 
     // everything else is considered nasty by everyone
     return true;

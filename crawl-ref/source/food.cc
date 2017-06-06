@@ -53,19 +53,6 @@ void make_hungry(int hunger_amount, bool suppress_msg,
     if (crawl_state.disables[DIS_HUNGER])
         return;
 
-#if TAG_MAJOR_VERSION == 34
-    // Lich/tree form djinn don't get exempted from food costs: infinite
-    // healing from channeling would be just too good.
-    if (you.species == SP_DJINNI)
-    {
-        if (!magic)
-            return;
-
-        contaminate_player(hunger_amount * 4 / 3, true);
-        return;
-    }
-#endif
-
     if (you_foodless())
         return;
 
@@ -131,22 +118,14 @@ void set_hunger(int new_hunger_level, bool suppress_msg)
         lessen_hunger(hunger_difference, suppress_msg);
 }
 
-bool you_foodless(bool can_eat)
+bool you_foodless()
 {
-    return you.undead_state() == US_UNDEAD
-#if TAG_MAJOR_VERSION == 34
-        || you.species == SP_DJINNI && !can_eat
-#endif
-        ;
+    return you.undead_state() == US_UNDEAD;
 }
 
 bool you_foodless_normally()
 {
-    return you.undead_state(false) == US_UNDEAD
-#if TAG_MAJOR_VERSION == 34
-        || you.species == SP_DJINNI
-#endif
-        ;
+    return you.undead_state(false) == US_UNDEAD;
 }
 
 bool prompt_eat_item(int slot)
@@ -177,7 +156,7 @@ bool prompt_eat_item(int slot)
 
 static bool _eat_check(bool check_hunger = true, bool silent = false)
 {
-    if (you_foodless(true))
+    if (you_foodless())
     {
         if (!silent)
         {
@@ -373,8 +352,8 @@ static void _describe_food_change(int food_increment)
 // Some food types may not get a message.
 static void _finished_eating_message(food_type type)
 {
-    bool herbivorous = player_mutation_level(MUT_HERBIVOROUS) > 0;
-    bool carnivorous = player_mutation_level(MUT_CARNIVOROUS) > 0;
+    bool herbivorous = you.get_mutation_level(MUT_HERBIVOROUS) > 0;
+    bool carnivorous = you.get_mutation_level(MUT_CARNIVOROUS) > 0;
 
     if (herbivorous)
     {
@@ -464,7 +443,7 @@ static bool _compare_by_freshness(const item_def *food1, const item_def *food2)
 int prompt_eat_chunks(bool only_auto)
 {
     // Full herbivores cannot eat chunks.
-    if (player_mutation_level(MUT_HERBIVOROUS) == 3)
+    if (you.get_mutation_level(MUT_HERBIVOROUS) == 3)
         return 0;
 
     // If we *know* the player can eat chunks, doesn't have the gourmand
@@ -626,7 +605,7 @@ static void _chunk_nutrition_message(int nutrition)
 
 static int _apply_herbivore_nutrition_effects(int nutrition)
 {
-    int how_herbivorous = player_mutation_level(MUT_HERBIVOROUS);
+    int how_herbivorous = you.get_mutation_level(MUT_HERBIVOROUS);
 
     while (how_herbivorous--)
         nutrition = nutrition * 75 / 100;
@@ -804,7 +783,7 @@ bool is_noxious(const item_def &food)
 bool is_inedible(const item_def &item)
 {
     // Mummies and liches don't eat.
-    if (you_foodless(true))
+    if (you_foodless())
         return true;
 
     if (item.base_type == OBJ_FOOD // XXX: removeme?
@@ -842,7 +821,7 @@ bool is_inedible(const item_def &item)
 bool is_preferred_food(const item_def &food)
 {
     // Mummies and liches don't eat.
-    if (you_foodless(true))
+    if (you_foodless())
         return false;
 
     // Vampires don't really have a preferred food type, but they really
@@ -852,11 +831,9 @@ bool is_preferred_food(const item_def &food)
 
 #if TAG_MAJOR_VERSION == 34
     if (food.is_type(OBJ_POTIONS, POT_PORRIDGE)
-        && item_type_known(food)
-        && you.species != SP_DJINNI
-        )
+        && item_type_known(food))
     {
-        return !player_mutation_level(MUT_CARNIVOROUS);
+        return !you.get_mutation_level(MUT_CARNIVOROUS);
     }
 #endif
 
@@ -867,10 +844,10 @@ bool is_preferred_food(const item_def &food)
     if (is_bad_food(food))
         return false;
 
-    if (player_mutation_level(MUT_CARNIVOROUS) == 3)
+    if (you.get_mutation_level(MUT_CARNIVOROUS) == 3)
         return food_is_meaty(food.sub_type);
 
-    if (player_mutation_level(MUT_HERBIVOROUS) == 3)
+    if (you.get_mutation_level(MUT_HERBIVOROUS) == 3)
         return food_is_veggie(food.sub_type);
 
     // No food preference.
@@ -937,14 +914,14 @@ bool can_eat(const item_def &food, bool suppress_msg, bool check_hunger)
 
     if (food_is_veggie(food))
     {
-        if (player_mutation_level(MUT_CARNIVOROUS) == 3)
+        if (you.get_mutation_level(MUT_CARNIVOROUS) == 3)
             FAIL("Sorry, you're a carnivore.")
         else
             return true;
     }
     else if (food_is_meaty(food))
     {
-        if (player_mutation_level(MUT_HERBIVOROUS) == 3)
+        if (you.get_mutation_level(MUT_HERBIVOROUS) == 3)
             FAIL("Sorry, you're a herbivore.")
         else if (food.sub_type == FOOD_CHUNK)
         {
@@ -1133,7 +1110,7 @@ int hunger_bars(const int hunger)
 
 string hunger_cost_string(const int hunger)
 {
-    if (you_foodless(true))
+    if (you_foodless())
         return "N/A";
 
 #ifdef WIZARD

@@ -13,6 +13,7 @@
 #include "colour.h"
 #include "database.h"
 #include "env.h"
+#include "god-type.h"
 #include "item-name.h"
 #include "item-prop.h"
 #include "mon-book.h"
@@ -273,9 +274,9 @@ static int _player_ghost_movement_energy()
 {
     int energy = 10;
 
-    if (int fast = player_mutation_level(MUT_FAST, false))
+    if (int fast = you.get_mutation_level(MUT_FAST, false))
         energy -= fast + 1;
-    if (int slow = player_mutation_level(MUT_SLOW, false))
+    if (int slow = you.get_mutation_level(MUT_SLOW, false))
         energy += slow + 2;
 
     if (you.wearing_ego(EQ_BOOTS, SPARM_RUNNING))
@@ -309,7 +310,7 @@ void ghost_demon::init_player_ghost(bool actual_ghost)
     set_resist(resists, MR_RES_FIRE, player_res_fire());
     set_resist(resists, MR_RES_COLD, player_res_cold());
     set_resist(resists, MR_RES_ELEC, player_res_electricity());
-    // clones might lack innate rPois, copy it.  pghosts don't care.
+    // clones might lack innate rPois, copy it. pghosts don't care.
     set_resist(resists, MR_RES_POISON, player_res_poison());
     set_resist(resists, MR_RES_NEG, you.res_negative_energy());
     set_resist(resists, MR_RES_ACID, player_res_acid());
@@ -372,7 +373,7 @@ void ghost_demon::init_player_ghost(bool actual_ghost)
     else
     {
         // Unarmed combat.
-        if (you.innate_mutation[MUT_CLAWS])
+        if (you.has_innate_mutation(MUT_CLAWS))
             damage += you.experience_level;
 
         damage += you.skills[SK_UNARMED_COMBAT];
@@ -659,17 +660,6 @@ void ghost_demon::add_spells(bool actual_ghost)
     }
 
     normalize_spell_freq(spells, xl);
-
-    // After normalizing the frequencies!
-    if (species_is_draconian(species)
-        && species != SP_BASE_DRACONIAN
-        && species != SP_GREY_DRACONIAN
-        // Don't give pillusions extra breath
-        && actual_ghost)
-    {
-        spells.emplace_back(SPELL_BOLT_OF_DRAINING, 33, // Not too common
-                            MON_SPELL_NATURAL | MON_SPELL_BREATH);
-    }
 }
 
 bool ghost_demon::has_spells() const
@@ -685,8 +675,10 @@ spell_type ghost_demon::translate_spell(spell_type spell) const
     {
     case SPELL_CONTROLLED_BLINK:
         return SPELL_BLINK;        // approximate
+#if TAG_MAJOR_VERSION == 34
     case SPELL_DELAYED_FIREBALL:
         return SPELL_FIREBALL;
+#endif
     case SPELL_DRAGON_CALL:
         return SPELL_SUMMON_DRAGON;
     case SPELL_SWIFTNESS:

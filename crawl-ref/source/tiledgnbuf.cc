@@ -4,6 +4,7 @@
 
 #include "env.h"
 #include "player.h"
+#include "tile-flags.h"
 #include "tiledef-dngn.h"
 #include "tiledef-icons.h"
 #include "tiledef-main.h"
@@ -511,6 +512,9 @@ void DungeonCellBuffer::pack_foreground(int x, int y, const packed_cell &cell)
     // draw it otherwise.
     if (bg & TILE_FLAG_NEW_STAIR && status_shift == 0)
         m_buf_icons.add(TILEI_NEW_STAIR, x, y);
+
+    if (bg & TILE_FLAG_NEW_TRANSPORTER && status_shift == 0)
+        m_buf_icons.add(TILEI_NEW_TRANSPORTER, x, y);
 
     if (bg & TILE_FLAG_EXCL_CTR && (bg & TILE_FLAG_UNSEEN))
         m_buf_icons.add(TILEI_TRAVEL_EXCLUSION_CENTRE_FG, x, y);

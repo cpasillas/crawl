@@ -23,6 +23,7 @@
 #include "god-passive.h"
 #include "item-name.h"
 #include "item-prop.h"
+#include "item-status-flag-type.h"
 #include "items.h"
 #include "item-use.h"
 #include "libutil.h"
@@ -159,7 +160,9 @@ static armour_type _acquirement_armour_for_slot(equipment_type slot_type,
     switch (slot_type)
     {
         case EQ_CLOAK:
-            return ARM_CLOAK;
+            if (you_can_wear(EQ_CLOAK) == MB_TRUE)
+                return random_choose(ARM_CLOAK, ARM_SCARF);
+            return ARM_SCARF;
         case EQ_GLOVES:
             return ARM_GLOVES;
         case EQ_BOOTS:
@@ -415,8 +418,8 @@ static int _acquirement_food_subtype(bool /*divine*/, int& quantity)
     {
         type_wanted = coinflip()
             ? FOOD_ROYAL_JELLY
-            : player_mutation_level(MUT_HERBIVOROUS) ? FOOD_BREAD_RATION
-                                                     : FOOD_MEAT_RATION;
+            : you.get_mutation_level(MUT_HERBIVOROUS) ? FOOD_BREAD_RATION
+                                                      : FOOD_MEAT_RATION;
     }
 
     quantity = 3 + random2(5);
@@ -503,7 +506,7 @@ static int _acquirement_weapon_subtype(bool divine, int & /*quantity*/)
 
         const bool two_handed = you.hands_reqd(item_considered) == HANDS_TWO;
 
-        if (two_handed && player_mutation_level(MUT_MISSING_HAND))
+        if (two_handed && you.get_mutation_level(MUT_MISSING_HAND))
             continue;
 
         // For non-Trog/Okawaru acquirements, give a boost to high-end items.
@@ -588,7 +591,7 @@ static int _acquirement_jewellery_subtype(bool /*divine*/, int & /*quantity*/)
     // Rings are (number of usable rings) times as common as amulets.
     // XXX: unify this with the actual check for ring slots
     const int ring_num = (you.species == SP_OCTOPODE ? 8 : 2)
-                       - (player_mutation_level(MUT_MISSING_HAND) ? 1 : 0);
+                       - (you.get_mutation_level(MUT_MISSING_HAND) ? 1 : 0);
 
     // Try ten times to give something the player hasn't seen.
     for (int i = 0; i < 10; i++)
@@ -662,7 +665,7 @@ static int _acquirement_misc_subtype(bool /*divine*/, int & /*quantity*/)
         return MISC_CRYSTAL_BALL_OF_ENERGY;
     }
 
-    const bool NO_LOVE = player_mutation_level(MUT_NO_LOVE);
+    const bool NO_LOVE = you.get_mutation_level(MUT_NO_LOVE);
 
     const vector<pair<int, int> > choices =
     {
@@ -710,7 +713,7 @@ static int _acquirement_wand_subtype(bool /*divine*/, int & /*quantity*/)
         { WAND_DISINTEGRATION,  5 },
         { WAND_DIGGING,         5 },
         { WAND_POLYMORPH,       5 },
-        { WAND_ENSLAVEMENT,     player_mutation_level(MUT_NO_LOVE) ? 0 : 5 },
+        { WAND_ENSLAVEMENT,     you.get_mutation_level(MUT_NO_LOVE) ? 0 : 5 },
         { WAND_PARALYSIS,       5 },
         { WAND_CONFUSION,       3 },
         { WAND_RANDOM_EFFECTS,  3 },
@@ -945,6 +948,9 @@ static bool _acquire_manual(item_def &book)
                     choose_random_weighted(weights, end(weights)));
     // Set number of bonus skill points.
     book.skill_points = random_range(2000, 3000);
+    // Identify.
+    set_ident_type(book, true);
+    set_ident_flags(book, ISFLAG_IDENT_MASK);
     return true;
 }
 
@@ -1177,7 +1183,7 @@ static string _why_reject(const item_def &item, int agent)
     }
 
     // Pain brand is useless if you've sacrificed Necromacy.
-    if (player_mutation_level(MUT_NO_NECROMANCY_MAGIC)
+    if (you.get_mutation_level(MUT_NO_NECROMANCY_MAGIC)
         && get_weapon_brand(item) == SPWPN_PAIN)
     {
         return "Destroying pain weapon after Necro sac!";
@@ -1477,7 +1483,7 @@ bool acquirement(object_class_type class_wanted, int agent,
         bad_class.set(OBJ_ARMOUR);
         bad_class.set(OBJ_STAVES);
     }
-    if (player_mutation_level(MUT_NO_ARTIFICE))
+    if (you.get_mutation_level(MUT_NO_ARTIFICE))
         bad_class.set(OBJ_MISCELLANY);
 
     bad_class.set(OBJ_FOOD, you_foodless_normally() && !you_worship(GOD_FEDHAS));

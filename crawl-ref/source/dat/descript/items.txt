@@ -171,12 +171,6 @@ book of enchantments
 A spellbook containing an assortment of powerful Hexes and Charms, which
 sparkles and shimmers as the pages are flipped.
 %%%%
-book of envenomations
-
-A book of advanced Poison magic, glowing with a sickly green light. Mages with
-a tendency to lick their fingers before turning a page will generally quit the
-habit soon after they begin reading this, one way or another.
-%%%%
 book of fire
 
 A book containing advanced spells in the elemental school of Fire, stolen from
@@ -550,8 +544,8 @@ A lightweight spear, designed for throwing.
 %%%%
 lajatang
 
-A very rare and extremely effective imported weapon, featuring a pole with
-half-moon blades at both ends.
+A very rare and extremely effective weapon, featuring a pole with half-moon
+blades at both ends.
 %%%%
 lamp of fire
 
@@ -682,10 +676,6 @@ A strange substance, produced by ghost moths. Consuming it causes regeneration
 of health and magic, along with total befuddlement. The two effects are
 fundamentally linked – the regeneration ends the moment the confusion does.
 %%%%
-potion of beneficial mutation
-
-A potion which grants a supposedly good mutation.
-%%%%
 potion of berserk rage
 
 A potion which can send one into an incoherent rage.
@@ -703,10 +693,6 @@ potion of cancellation
 
 A potion which ends most magical effects, good or bad, affecting one who drinks
 it. It also reduces magical contamination.
-%%%%
-potion of cure mutation
-
-A potion which removes a number of mutations when consumed.
 %%%%
 potion of curing
 
@@ -751,7 +737,8 @@ drinks it.
 %%%%
 potion of mutation
 
-A potion which causes random mutation.
+A potion which mutates the drinker, removing several mutations then
+granting a few mutations, at least one beneficial.
 %%%%
 potion of resistance
 
@@ -831,8 +818,7 @@ acids, although not infallibly so.
 %%%%
 ring of loudness
 
-A ring that causes the wearer's movements to be particularly loud, making them
-less stealthy.
+A ring that makes the player less stealthy.
 %%%%
 ring of magical power
 
@@ -922,6 +908,11 @@ scale mail
 A leather suit covered with metal plates attached to each other in overlapping
 rows to provide full protection, but at the cost of reduced freedom of
 movement.
+%%%%
+scarf
+
+A length of stylish fabric. At its creation, enchantments were woven into it,
+and as such it cannot accept further enchantment.
 %%%%
 scimitar
 

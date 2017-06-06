@@ -3,11 +3,12 @@
  * @brief Game state.
 **/
 
-#ifndef STATE_H
-#define STATE_H
+#pragma once
 
 #include <vector>
 
+#include "command-type.h"
+#include "disable-type.h"
 #include "player.h"
 
 class monster;
@@ -51,6 +52,8 @@ struct game_state
     int  seen_hups;         // Set to true if SIGHUP received.
 
     bool map_stat_gen;      // Set if we're generating stats on maps.
+    bool map_stat_dump_disconnect; // Set if we dump disconnected maps and exit
+                                   // under mapstat.
     bool obj_stat_gen;      // Set if we're generating object stats.
 
     game_type type;
@@ -248,5 +251,3 @@ private:
 
 bool interrupt_cmd_repeat(activity_interrupt_type ai,
                           const activity_interrupt_data &at);
-
-#endif

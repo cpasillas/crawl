@@ -489,14 +489,6 @@ public:
     static const FormBlade &instance() { static FormBlade inst; return inst; }
 
     /**
-     * Find the player's base unarmed damage in this form.
-     */
-    int get_base_unarmed_damage() const override
-    {
-        return 8 + div_rand_round(you.strength() + you.dex(), 3);
-    }
-
-    /**
      * % screen description
      */
     string get_long_name() const override
@@ -519,7 +511,7 @@ public:
      */
     string transform_message(transformation previous_trans) const override
     {
-        const bool singular = player_mutation_level(MUT_MISSING_HAND);
+        const bool singular = you.get_mutation_level(MUT_MISSING_HAND);
 
         // XXX: a little ugly
         return make_stringf("Your %s turn%s into%s razor-sharp scythe blade%s.",
@@ -532,7 +524,7 @@ public:
      */
     string get_untransform_message() const override
     {
-        const bool singular = player_mutation_level(MUT_MISSING_HAND);
+        const bool singular = you.get_mutation_level(MUT_MISSING_HAND);
 
         // XXX: a little ugly
         return make_stringf("Your %s revert%s to %s normal proportions.",
@@ -558,14 +550,6 @@ private:
     DISALLOW_COPY_AND_ASSIGN(FormStatue);
 public:
     static const FormStatue &instance() { static FormStatue inst; return inst; }
-
-    /**
-     * Find the player's base unarmed damage in this form.
-     */
-    int get_base_unarmed_damage() const override
-    {
-        return 6 + div_rand_round(you.strength(), 3);
-    }
 
     /**
      * Get a message for transforming into this form.
@@ -595,22 +579,9 @@ public:
     string get_untransform_message() const override
     {
         // This only handles lava orcs going statue -> stoneskin.
-        if (
-#if TAG_MAJOR_VERSION == 34
-            you.species == SP_LAVA_ORC && temperature_effect(LORC_STONESKIN)
-            ||
-#endif
-            you.species == SP_GARGOYLE)
-        {
+        if (you.species == SP_GARGOYLE)
             return "You revert to a slightly less stony form.";
-        }
-#if TAG_MAJOR_VERSION == 34
-        if (you.species != SP_LAVA_ORC)
-#endif
-            return "You revert to your normal fleshy form.";
-#if TAG_MAJOR_VERSION == 34
-        return Form::get_untransform_message();
-#endif
+        return "You revert to your normal fleshy form.";
     }
 
     /**
@@ -623,7 +594,7 @@ public:
         if (you.has_usable_tentacles(true))
             return "Stone tentacles";
 
-        const bool singular = player_mutation_level(MUT_MISSING_HAND);
+        const bool singular = you.get_mutation_level(MUT_MISSING_HAND);
         return make_stringf("Stone fist%s", singular ? "" : "s");
     }
 };
@@ -641,12 +612,7 @@ public:
      */
     string get_untransform_message() const override
     {
-#if TAG_MAJOR_VERSION == 34
-        if (you.species == SP_LAVA_ORC && !temperature_effect(LORC_STONESKIN))
-            return "Your icy form melts away into molten rock.";
-        else
-#endif
-            return "You warm up again.";
+        return "You warm up again.";
     }
 
     /**
@@ -654,7 +620,7 @@ public:
      */
     string get_uc_attack_name(string default_name) const override
     {
-        const bool singular = player_mutation_level(MUT_MISSING_HAND);
+        const bool singular = you.get_mutation_level(MUT_MISSING_HAND);
         return make_stringf("Ice fist%s", singular ? "" : "s");
     }
 };
@@ -688,15 +654,6 @@ public:
         if (species_is_draconian(you.species))
             return 1000;
         return Form::get_ac_bonus();
-    }
-
-    /**
-     * Find the player's base unarmed damage in this form.
-     */
-    int get_base_unarmed_damage() const override
-    {
-        // You also get another 6 damage from claws.
-        return 12 + div_rand_round(you.strength() * 2, 3);
     }
 
     /**
@@ -1131,20 +1088,6 @@ bool form_likes_water(transformation form)
     return form_can_swim(form);
 }
 
-bool form_likes_lava(transformation form)
-{
-#if TAG_MAJOR_VERSION == 34
-    // Lava orcs can only swim in non-phys-change forms.
-    // However, ice beast & statue form will melt back to lava, so they're OK
-    return you.species == SP_LAVA_ORC
-           && (!form_changed_physiology(form)
-               || form == transformation::ice_beast
-               || form == transformation::statue);
-#else
-    return false;
-#endif
-}
-
 // Used to mark transformations which override species intrinsics.
 bool form_changed_physiology(transformation form)
 {
@@ -1363,7 +1306,7 @@ string blade_parts(bool terse)
     else
         str = "hand";
 
-    if (!player_mutation_level(MUT_MISSING_HAND))
+    if (!you.get_mutation_level(MUT_MISSING_HAND))
         str = pluralise(str);
 
     return str;
@@ -1430,7 +1373,7 @@ bool feat_dangerous_for_form(transformation which_trans,
         return false;
 
     if (feat == DNGN_LAVA)
-        return !form_likes_lava(which_trans);
+        return true;
 
     if (feat == DNGN_DEEP_WATER)
         return !you.can_water_walk() && !form_likes_water(which_trans);
@@ -1462,7 +1405,7 @@ static bool _slot_conflict(equipment_type eq)
     }
 
     for (int mut = 0; mut < NUM_MUTATIONS; mut++)
-        if (you.mutation[mut] && eq == beastly_slot(mut))
+        if (you.has_mutation(static_cast<mutation_type>(mut)) && eq == beastly_slot(mut))
             return true;
 
     return false;
@@ -1490,10 +1433,6 @@ static bool _transformation_is_safe(transformation which_trans,
                                     dungeon_feature_type feat,
                                     string *fail_reason)
 {
-#if TAG_MAJOR_VERSION == 34
-    if (which_trans == transformation::ice_beast && you.species == SP_DJINNI)
-        return false; // melting is fatal...
-#endif
     if (!feat_dangerous_for_form(which_trans, feat))
         return true;
 
@@ -1730,15 +1669,6 @@ bool transform(int pow, transformation which_trans, bool involuntary,
         msg = "You cannot become a lich while in Death's Door.";
         success = false;
     }
-#if TAG_MAJOR_VERSION == 34
-    else if (you.species == SP_LAVA_ORC && !temperature_effect(LORC_STONESKIN)
-             && (which_trans == transformation::ice_beast
-                 || which_trans == transformation::statue))
-    {
-        msg =  "Your temperature is too high to benefit from that spell.";
-        success = false;
-    }
-#endif
 
     if (!just_check && previous_trans != transformation::none)
         untransform(true);
@@ -1839,15 +1769,7 @@ bool transform(int pow, transformation which_trans, bool involuntary,
         break;
 
     case transformation::spider:
-        if (you.attribute[ATTR_HELD])
-        {
-            trap_def *trap = trap_at(you.pos());
-            if (trap && trap->type == TRAP_WEB)
-            {
-                mpr("You disentangle yourself from the web.");
-                you.attribute[ATTR_HELD] = 0;
-            }
-        }
+        leave_web();
         break;
 
     case transformation::tree:
@@ -1876,7 +1798,7 @@ bool transform(int pow, transformation which_trans, bool involuntary,
                 destroy_item(net);
             }
 
-            you.attribute[ATTR_HELD] = 0;
+            stop_being_held();
         }
         break;
 
@@ -2004,24 +1926,24 @@ void untransform(bool skip_move)
 
     if (old_form == transformation::appendage)
     {
-        int app = you.attribute[ATTR_APPENDAGE];
+        mutation_type app = static_cast<mutation_type>(you.attribute[ATTR_APPENDAGE]);
         ASSERT(beastly_slot(app) != EQ_NONE);
-        const int levels = you.mutation[app];
+        const int levels = you.get_base_mutation_level(app);
         // Preserve extra mutation levels acquired after transforming.
         const int beast_levels = _beastly_appendage_level(app);
-        const int extra = max(0, levels - you.innate_mutation[app]
+        const int extra = max(0, levels - you.get_innate_mutation_level(app)
                                         - beast_levels);
-        you.mutation[app] = you.innate_mutation[app] + extra;
+        you.mutation[app] = you.get_innate_mutation_level(app) + extra;
         you.attribute[ATTR_APPENDAGE] = 0;
 
         // The mutation might have been removed already by a conflicting
         // demonspawn innate mutation; no message then.
         if (levels)
         {
-            const char * const verb = you.mutation[app] ? "shrink"
-                                                        : "disappear";
+            const char * const verb = you.has_mutation(app) ? "shrink"
+                                                            : "disappear";
             mprf(MSGCH_DURATION, "Your %s %s%s.",
-                 mutation_name(static_cast<mutation_type>(app)), verb,
+                 mutation_name(app), verb,
                  app == MUT_TENTACLE_SPIKE ? "s" : "");
         }
     }

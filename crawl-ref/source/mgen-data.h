@@ -1,7 +1,8 @@
-#ifndef MGEN_DATA_H
-#define MGEN_DATA_H
+#pragma once
 
+#include "beh-type.h"
 #include "coord.h"
+#include "god-type.h"
 #include "mgen-enum.h"
 #include "mon-flags.h"
 
@@ -29,7 +30,7 @@ struct mgen_data
     beh_type        behaviour;
 
     // Who summoned this monster?  Important to know for death accounting
-    // and the summon cap, if and when it goes in.  nullptr is no summoner.
+    // and the summon cap, if and when it goes in. nullptr is no summoner.
     const actor*    summoner;
 
     // For summoned monsters, this is a measure of how long the summon will
@@ -208,5 +209,3 @@ struct mgen_data
         return mgen_data(mt, BEH_HOSTILE, p, alert ? MHITYOU : MHITNOT);
     }
 };
-
-#endif

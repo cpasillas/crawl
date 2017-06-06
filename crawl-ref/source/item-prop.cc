@@ -20,16 +20,20 @@
 #include "god-passive.h"
 #include "invent.h"
 #include "items.h"
+#include "item-status-flag-type.h"
 #include "item-use.h"
 #include "libutil.h" // map_find
 #include "message.h"
 #include "misc.h"
 #include "notes.h"
 #include "options.h"
+#include "orb-type.h"
+#include "potion-type.h"
 #include "random.h"
 #include "religion.h"
 #include "shopping.h"
 #include "skills.h"
+#include "spl-wpnench.h"
 #include "stringutil.h"
 #include "terrain.h"
 #include "xom.h"
@@ -73,7 +77,7 @@ struct armour_def
     { ARM_ ## id ## _DRAGON_ARMOUR, name " dragon scales",  ac, evp, prc,   \
       EQ_BODY_ARMOUR, SIZE_LITTLE, SIZE_GIANT, false, res, 25 }
 #else
-#define DRAGON_ARMOUR(id, name, ac, evp, prc, res)
+#define DRAGON_ARMOUR(id, name, ac, evp, prc, res)                          \
     { ARM_ ## id ## _DRAGON_ARMOUR, name " dragon scales",  ac, evp, prc,   \
       EQ_BODY_ARMOUR, SIZE_LITTLE, SIZE_GIANT, false, res, 25 }
 #endif
@@ -109,31 +113,11 @@ static const armour_def Armour_prop[] =
     { ARM_TROLL_LEATHER_ARMOUR, "troll leather armour",  4,  -40,    150,
        EQ_BODY_ARMOUR, SIZE_LITTLE, SIZE_GIANT, false, ARMF_REGENERATION, 50 },
 
-    DRAGON_ARMOUR(STEAM,       "steam",                   5,   0,   400,
-        ARMF_RES_STEAM),
-    DRAGON_ARMOUR(ACID,        "acid",                    6,  -50,  400,
-        ARMF_RES_CORR),
-    DRAGON_ARMOUR(QUICKSILVER, "quicksilver",             9,  -70,  600,
-        ARMF_RES_MAGIC),
-    DRAGON_ARMOUR(SWAMP,       "swamp",                   7,  -70,  500,
-        ARMF_RES_POISON),
-    DRAGON_ARMOUR(FIRE,        "fire",                    8, -110,  600,
-        ard(ARMF_RES_FIRE, 2) | ARMF_VUL_COLD),
-    DRAGON_ARMOUR(ICE,         "ice",                     9, -110,  600,
-        ard(ARMF_RES_COLD, 2) | ARMF_VUL_FIRE),
-    DRAGON_ARMOUR(PEARL,       "pearl",                  10, -110, 1000,
-        ARMF_RES_NEG),
-    DRAGON_ARMOUR(STORM,       "storm",                  10, -150,  800,
-        ARMF_RES_ELEC),
-    DRAGON_ARMOUR(SHADOW,      "shadow",                 10, -150,  800,
-        ard(ARMF_STEALTH, 4)),
-    DRAGON_ARMOUR(GOLD,        "gold",                   12, -230,  800,
-        ARMF_RES_FIRE | ARMF_RES_COLD | ARMF_RES_POISON),
-
-#undef DRAGON_HIDE
-
     { ARM_CLOAK,                "cloak",                  1,   0,   45,
         EQ_CLOAK,       SIZE_LITTLE, SIZE_BIG, true },
+    { ARM_SCARF,                "scarf",                  0,   0,   50,
+        EQ_CLOAK,       SIZE_LITTLE, SIZE_BIG, true },
+
     { ARM_GLOVES,               "gloves",                 1,   0,   45,
         EQ_GLOVES,      SIZE_SMALL,  SIZE_MEDIUM, true },
 
@@ -168,6 +152,30 @@ static const armour_def Armour_prop[] =
         EQ_SHIELD,      SIZE_SMALL,  SIZE_BIG, true    },
     { ARM_LARGE_SHIELD,         "large shield",          13,  -50,  45,
         EQ_SHIELD,      SIZE_MEDIUM, SIZE_GIANT, true  },
+
+    // Following all ARM_ entries for the benefit of util/gather_items
+    DRAGON_ARMOUR(STEAM,       "steam",                   5,   0,   400,
+        ARMF_RES_STEAM),
+    DRAGON_ARMOUR(ACID,        "acid",                    6,  -50,  400,
+        ARMF_RES_CORR),
+    DRAGON_ARMOUR(QUICKSILVER, "quicksilver",             9,  -70,  600,
+        ARMF_RES_MAGIC),
+    DRAGON_ARMOUR(SWAMP,       "swamp",                   7,  -70,  500,
+        ARMF_RES_POISON),
+    DRAGON_ARMOUR(FIRE,        "fire",                    8, -110,  600,
+        ard(ARMF_RES_FIRE, 2) | ARMF_VUL_COLD),
+    DRAGON_ARMOUR(ICE,         "ice",                     9, -110,  600,
+        ard(ARMF_RES_COLD, 2) | ARMF_VUL_FIRE),
+    DRAGON_ARMOUR(PEARL,       "pearl",                  10, -110, 1000,
+        ARMF_RES_NEG),
+    DRAGON_ARMOUR(STORM,       "storm",                  10, -150,  800,
+        ARMF_RES_ELEC),
+    DRAGON_ARMOUR(SHADOW,      "shadow",                 10, -150,  800,
+        ard(ARMF_STEALTH, 4)),
+    DRAGON_ARMOUR(GOLD,        "gold",                   12, -230,  800,
+        ARMF_RES_FIRE | ARMF_RES_COLD | ARMF_RES_POISON),
+
+#undef DRAGON_ARMOUR
 };
 
 typedef pair<brand_type, int> brand_weight_tuple;
@@ -433,7 +441,7 @@ static const weapon_def Weapon_prop[] =
     { WPN_GIANT_CLUB,        "giant club",         20, -6, 16,
         SK_MACES_FLAILS, SIZE_LARGE, NUM_SIZE_LEVELS, MI_NONE,
         DAMV_CRUSHING, 1, 10, 17, {} },
-    { WPN_GIANT_SPIKED_CLUB, "giant spiked club",  22, -7, 19,
+    { WPN_GIANT_SPIKED_CLUB, "giant spiked club",  22, -7, 18,
         SK_MACES_FLAILS, SIZE_LARGE, NUM_SIZE_LEVELS, MI_NONE,
         DAMV_CRUSHING | DAM_PIERCE, 1, 10, 19, {} },
 
@@ -464,9 +472,11 @@ static const weapon_def Weapon_prop[] =
     { WPN_RAPIER,           "rapier",               8,  4, 12,
         SK_SHORT_BLADES, SIZE_LITTLE, SIZE_LITTLE, MI_NONE,
         DAMV_PIERCING, 8, 10, 40, SBL_BRANDS },
+#if TAG_MAJOR_VERSION == 34
     { WPN_CUTLASS,          "cutlass",              8,  4, 12,
         SK_SHORT_BLADES, SIZE_LITTLE, SIZE_LITTLE, MI_NONE,
         DAMV_SLICING | DAM_PIERCE, 0, 0, 0, {}},
+#endif
 
 
     // Long Blades
@@ -748,6 +758,8 @@ const set<pair<object_class_type, int> > removed_items =
     { OBJ_POTIONS,   POT_DECAY },
     { OBJ_POTIONS,   POT_POISON },
     { OBJ_POTIONS,   POT_RESTORE_ABILITIES },
+    { OBJ_POTIONS,   POT_CURE_MUTATION },
+    { OBJ_POTIONS,   POT_BENEFICIAL_MUTATION },
     { OBJ_BOOKS,     BOOK_WIZARDRY },
     { OBJ_BOOKS,     BOOK_CONTROL },
     { OBJ_BOOKS,     BOOK_BUGGY_DESTRUCTION },
@@ -817,8 +829,12 @@ bool item_is_cursable(const item_def &item, bool ignore_holy_wrath)
         return false;
     if (item_known_cursed(item))
         return false;
-    if (!ignore_holy_wrath && item.base_type == OBJ_WEAPONS
-        && get_weapon_brand(item) == SPWPN_HOLY_WRATH)
+    if (!ignore_holy_wrath
+        && item.base_type == OBJ_WEAPONS
+        && (get_weapon_brand(item) == SPWPN_HOLY_WRATH
+            || you.duration[DUR_EXCRUCIATING_WOUNDS]
+               && item_is_equipped(item)
+               && you.props[ORIGINAL_BRAND_KEY].get_int() == SPWPN_HOLY_WRATH))
     {
         return false;
     }
@@ -883,7 +899,10 @@ void do_curse_item(item_def &item, bool quiet)
 
     // Holy wrath weapons cannot be cursed.
     if (item.base_type == OBJ_WEAPONS
-        && get_weapon_brand(item) == SPWPN_HOLY_WRATH)
+        && (get_weapon_brand(item) == SPWPN_HOLY_WRATH
+            || you.duration[DUR_EXCRUCIATING_WOUNDS]
+               && item_is_equipped(item)
+               && you.props[ORIGINAL_BRAND_KEY].get_int() == SPWPN_HOLY_WRATH))
     {
         if (!quiet)
         {
@@ -1296,6 +1315,19 @@ armour_type hide_for_monster(monster_type mc)
 }
 
 /**
+ * Return whether a piece of armour is enchantable.
+ *
+ * @param item      The item being considered.
+ * @return          The maximum enchantment the item can hold.
+ */
+bool armour_is_enchantable(const item_def &item)
+{
+    ASSERT(item.base_type == OBJ_ARMOUR);
+    return item.sub_type != ARM_QUICKSILVER_DRAGON_ARMOUR
+        && item.sub_type != ARM_SCARF;
+}
+
+/**
  * Return the enchantment limit of a piece of armour.
  *
  * @param item      The item being considered.
@@ -1305,7 +1337,8 @@ int armour_max_enchant(const item_def &item)
 {
     ASSERT(item.base_type == OBJ_ARMOUR);
 
-    if (item.sub_type == ARM_QUICKSILVER_DRAGON_ARMOUR)
+    // Unenchantables.
+    if (!armour_is_enchantable(item))
         return 0;
 
     const int eq_slot = get_armour_slot(item);
@@ -1836,21 +1869,25 @@ bool is_blessed_convertible(const item_def &item)
                    || is_blessed(item)));
 }
 
+static map<weapon_type, weapon_type> _holy_upgrades =
+{
+    { WPN_DEMON_BLADE, WPN_EUDEMON_BLADE },
+    { WPN_DEMON_WHIP, WPN_SACRED_SCOURGE },
+    { WPN_DEMON_TRIDENT, WPN_TRISHULA },
+};
+
 bool convert2good(item_def &item)
 {
     if (item.base_type != OBJ_WEAPONS)
         return false;
 
-    switch (item.sub_type)
+    if (auto repl = map_find(_holy_upgrades, (weapon_type) item.sub_type))
     {
-    default: return false;
-
-    case WPN_DEMON_BLADE:   item.sub_type = WPN_EUDEMON_BLADE; break;
-    case WPN_DEMON_WHIP:    item.sub_type = WPN_SACRED_SCOURGE; break;
-    case WPN_DEMON_TRIDENT: item.sub_type = WPN_TRISHULA; break;
+        item.sub_type = *repl;
+        return true;
     }
 
-    return true;
+    return false;
 }
 
 bool convert2bad(item_def &item)
@@ -1858,16 +1895,18 @@ bool convert2bad(item_def &item)
     if (item.base_type != OBJ_WEAPONS)
         return false;
 
-    switch (item.sub_type)
+    auto it = find_if(begin(_holy_upgrades), end(_holy_upgrades),
+                      [&item](const pair<const weapon_type, weapon_type> elt)
+                      {
+                          return elt.second == item.sub_type;
+                      });
+    if  (it != end(_holy_upgrades))
     {
-    default: return false;
-
-    case WPN_EUDEMON_BLADE:        item.sub_type = WPN_DEMON_BLADE; break;
-    case WPN_SACRED_SCOURGE:       item.sub_type = WPN_DEMON_WHIP; break;
-    case WPN_TRISHULA:             item.sub_type = WPN_DEMON_TRIDENT; break;
+        item.sub_type = it->first;
+        return true;
     }
 
-    return true;
+    return false;
 }
 
 bool is_brandable_weapon(const item_def &wpn, bool allow_ranged, bool divine)
@@ -2312,8 +2351,8 @@ int food_value(const item_def &item)
 {
     ASSERT(item.defined() && item.base_type == OBJ_FOOD);
 
-    const int herb = player_mutation_level(MUT_HERBIVOROUS);
-    const int carn = player_mutation_level(MUT_CARNIVOROUS);
+    const int herb = you.get_mutation_level(MUT_HERBIVOROUS);
+    const int carn = you.get_mutation_level(MUT_CARNIVOROUS);
 
     const food_def &food = Food_prop[Food_index[item.sub_type]];
 
@@ -2465,6 +2504,30 @@ int get_armour_res_corr(const item_def &arm)
 
     // intrinsic armour abilities
     return armour_type_prop(arm.sub_type, ARMF_RES_CORR);
+}
+
+int get_armour_repel_missiles(const item_def &arm, bool check_artp)
+{
+    ASSERT(arm.base_type == OBJ_ARMOUR);
+
+    // check for ego resistance
+    if (get_armour_ego_type(arm) == SPARM_REPULSION)
+        return true;
+
+    if (check_artp && is_artefact(arm))
+        return artefact_property(arm, ARTP_RMSL);
+
+    return false;
+}
+
+int get_armour_cloud_immunity(const item_def &arm)
+{
+    ASSERT(arm.base_type == OBJ_ARMOUR);
+
+    if (get_armour_ego_type(arm) == SPARM_CLOUD_IMMUNE)
+        return true;
+
+    return false;
 }
 
 int get_jewellery_res_fire(const item_def &ring, bool check_artp)

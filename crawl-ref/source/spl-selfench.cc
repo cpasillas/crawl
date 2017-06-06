@@ -188,22 +188,11 @@ spret_type corpse_armour(int pow, bool fail)
     return SPRET_SUCCESS;
 }
 
-spret_type missile_prot(int pow, bool fail)
-{
-    fail_check();
-    you.attribute[ATTR_REPEL_MISSILES] = 1;
-    mpr("You feel protected from missiles.");
-    return SPRET_SUCCESS;
-}
-
 spret_type deflection(int pow, bool fail)
 {
     fail_check();
     you.attribute[ATTR_DEFLECT_MISSILES] = 1;
     mpr("You feel very safe from missiles.");
-    // Replace RMsl, if active.
-    if (you.attribute[ATTR_REPEL_MISSILES])
-        you.attribute[ATTR_REPEL_MISSILES] = 0;
 
     return SPRET_SUCCESS;
 }
@@ -230,10 +219,8 @@ spret_type cast_revivification(int pow, bool fail)
     {
         mprf(MSGCH_DURATION, "Your life is in your own hands once again.");
         // XXX: better cause name?
-        paralyse_player("Death's Door abortion", 5 + random2(5));
-        confuse_player(10 + random2(10));
+        paralyse_player("Death's Door abortion");
         you.duration[DUR_DEATHS_DOOR] = 0;
-        you.increase_duration(DUR_EXHAUSTED, roll_dice(1,3));
     }
     return SPRET_SUCCESS;
 }
@@ -246,7 +233,6 @@ spret_type cast_swiftness(int power, bool fail)
     {
         // Hint that the player won't be faster until they leave the liquid.
         mprf("The %s foams!", you.in_water() ? "water"
-                            : you.in_lava()  ? "lava"
                                              : "liquid ground");
     }
 
