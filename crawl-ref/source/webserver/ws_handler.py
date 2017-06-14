@@ -343,10 +343,14 @@ class CrawlWebSocket(tornado.websocket.WebSocketHandler):
             self.ioloop.stop()
 
     def init_user(self):
-        with open("/dev/null", "w") as f:
-            result = subprocess.call([config.init_player_program, self.username],
-                                     stdout = f, stderr = subprocess.STDOUT)
-            return result == 0
+        proc = subprocess.Popen ([config.init_player_program, self.username],
+            shell=False)
+        proc.communicate()
+        return True
+        #with open("/dev/null", "w") as f:
+            #result = subprocess.call([config.init_player_program, self.username],
+                                     #stdout = f, stderr = subprocess.STDOUT)
+            #return result == 0
 
     def stop_watching(self):
         if self.watched_game:
