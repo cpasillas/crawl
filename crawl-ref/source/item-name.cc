@@ -1854,15 +1854,9 @@ string item_def::name_aux(description_level_type desc, bool terse, bool ident,
     case OBJ_FOOD:
         switch (item_typ)
         {
-        case FOOD_MEAT_RATION:
-            buff << "turkey breast slice";
-            break;
-        case FOOD_BREAD_RATION:
-            buff << "bread with stuffing";
-            break;
-        case FOOD_ROYAL_JELLY:
-            buff << "turkey leg";
-            break;
+        case FOOD_MEAT_RATION: buff << "turkey breast slice"; break;
+        case FOOD_BREAD_RATION: buff << "bread with stuffing"; break;
+        case FOOD_ROYAL_JELLY: buff << "royal turkey leg"; break;
         case FOOD_CHUNK:
             switch (determine_chunk_effect(*this))
             {
