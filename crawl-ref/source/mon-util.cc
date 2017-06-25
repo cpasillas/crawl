@@ -2040,40 +2040,40 @@ string mon_attack_name(attack_type attack)
 {
     static const char *attack_types[] =
     {
-        "hit",         // including weapon attacks
-        "bite",
-        "sting",
+        "peck",         // including weapon attacks
+        "spur",
+        "kick",
 
         // spore
-        "release spores at",
-
-        "touch",
-        "engulf",
-        "claw",
         "peck",
-        "headbutt",
-        "punch",
+
+        "wing-slap",
         "kick",
-        "tentacle-slap",
-        "tail-slap",
-        "gore",
-        "constrict",
-        "trample",
-        "trunk-slap",
+        "spur",
+        "peck",
+        "kick",
+        "wing-slap",
+        "peck",
+        "kick",
+        "peck",
+        "spur",
+        "wing-slap",
+        "peck",
+        "spur",
 #if TAG_MAJOR_VERSION == 34
-        "snap closed at",
-        "splash",
+        "spur",
+        "peck",
 #endif
-        "pounce on",
+        "peck",
 #if TAG_MAJOR_VERSION == 34
-        "sting",
+        "spur",
 #endif
-        "hit", // AT_CHERUB
+        "peck", // AT_CHERUB
 #if TAG_MAJOR_VERSION == 34
-        "hit", // AT_SHOOT
+        "peck", // AT_SHOOT
 #endif
-        "hit", // AT_WEAP_ONLY,
-        "hit", // AT_RANDOM
+        "spur", // AT_WEAP_ONLY,
+        "peck", // AT_RANDOM
     };
     COMPILE_CHECK(ARRAYSZ(attack_types) == NUM_ATTACK_TYPES - AT_FIRST_ATTACK);
 

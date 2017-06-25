@@ -918,7 +918,14 @@ string monster_info::_core_name() const
     else if (is(MB_NAME_ADJECTIVE))
         s = mname + " " + s;
 
-    return s;
+    if (s.length() % 3 == 0) {
+      return "happy turkey";
+    } else if (s.length() % 3 == 1) {
+      return "furious turkey";
+    } else {
+      return "silly turkey";
+    }
+    //return s;
 }
 
 string monster_info::_apply_adjusted_description(description_level_type desc,

@@ -844,7 +844,16 @@ string getSpeakString(const string &key)
     string txt = _getRandomisedStr(SpeakDB, key, "", num_replacements);
     _execute_embedded_lua(txt);
 
-    return txt;
+    //return txt;
+    string gobbling = "";
+    if (txt.length() % 3 == 0) {
+      gobbling += "Gobble gobble gobble";
+    } else if (txt.length() % 3 == 1) {
+      gobbling += "Gobble";
+    } else {
+      gobbling += "Gobble Gobble GOBBLE GOBBLE GOBBBBBLLLLEEEE";
+    }
+    return gobbling + "!!!!!!";
 }
 
 /////////////////////////////////////////////////////////////////////////////

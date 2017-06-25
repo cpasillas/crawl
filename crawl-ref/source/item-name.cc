@@ -143,10 +143,12 @@ string item_def::name(description_level_type descrip, bool terse, bool ident,
                         | ISFLAG_COSMETIC_MASK;
     }
 
-    if (descrip == DESC_NONE)
+    if (descrip == DESC_NONE) {
         return "";
+    }
 
     ostringstream buff;
+
 
     const string auxname = name_aux(descrip, terse, ident, with_inscription,
                                     ignore_flags);
@@ -1854,10 +1856,15 @@ string item_def::name_aux(description_level_type desc, bool terse, bool ident,
     case OBJ_FOOD:
         switch (item_typ)
         {
-        case FOOD_MEAT_RATION: buff << "meat ration"; break;
-        case FOOD_BREAD_RATION: buff << "bread ration"; break;
-        case FOOD_ROYAL_JELLY: buff << "royal jelly"; break;
-        case FOOD_FRUIT: buff << "fruit"; break;
+        case FOOD_MEAT_RATION:
+            buff << "turkey breast slice";
+            break;
+        case FOOD_BREAD_RATION:
+            buff << "bread with stuffing";
+            break;
+        case FOOD_ROYAL_JELLY:
+            buff << "turkey leg";
+            break;
         case FOOD_CHUNK:
             switch (determine_chunk_effect(*this))
             {
@@ -1871,8 +1878,9 @@ string item_def::name_aux(description_level_type desc, bool terse, bool ident,
                     break;
             }
 
-            buff << "chunk of flesh";
+            buff << "turkey leg";
             break;
+        case FOOD_FRUIT: buff << "fruit"; break;
 #if TAG_MAJOR_VERSION == 34
         default: buff << "removed food"; break;
 #endif
@@ -2063,7 +2071,9 @@ string item_def::name_aux(description_level_type desc, bool terse, bool ident,
 
         const bool shaped = starts_with(_name, "shaped ");
 
-        if (!_name.empty() && name_type == MF_NAME_ADJECTIVE)
+        buff << "turkey ";
+
+        /* if (!_name.empty() && name_type == MF_NAME_ADJECTIVE)
             buff << _name << " ";
 
         if ((name_flags & MF_NAME_SPECIES) && name_type == MF_NAME_REPLACE)
@@ -2076,7 +2086,7 @@ string item_def::name_aux(description_level_type desc, bool terse, bool ident,
 
             if (!_name.empty() && shaped)
                 buff << _name << ' ';
-        }
+        } */
 
         if (item_typ == CORPSE_BODY)
             buff << "corpse";

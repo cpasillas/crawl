@@ -49,7 +49,7 @@ static bool _start_butchering(item_def& corpse)
 
     if (is_forbidden_food(corpse))
     {
-        mprf("It would be a sin to %sbutcher this!",
+        mprf("It would be a sin to %scarve this!",
              bottle_blood ? "bottle or " : "");
         return false;
     }
@@ -83,7 +83,7 @@ void finish_butchering(item_def& corpse, bool bottling)
     }
     else
     {
-        mprf("You butcher %s.",
+        mprf("You carve %s.",
              corpse.name(DESC_THE).c_str());
 
         butcher_corpse(corpse);
@@ -159,7 +159,7 @@ void butchery(item_def* specific_corpse)
 
     if (corpses.empty())
     {
-        mprf("There isn't anything to %sbutcher here.",
+        mprf("There isn't anything to %scarve here.",
              bottle_blood ? "bottle or " : "");
         return;
     }
@@ -186,8 +186,8 @@ void butchery(item_def* specific_corpse)
         meat.push_back(entry.first);
 
     vector<SelItem> selected =
-        select_items(meat, bottle_blood ? "Choose a corpse to bottle or butcher"
-                                        : "Choose a corpse to butcher",
+        select_items(meat, bottle_blood ? "Choose a corpse to bottle or carve"
+                                        : "Choose a corpse to carve",
                      false, MT_ANY, _butcher_menu_title);
     redraw_screen();
     for (SelItem sel : selected)
@@ -288,7 +288,7 @@ void butchery(item_def* specific_corpse)
     // No point in displaying this if the player pressed 'a' above.
     if (!to_eat && !butcher_all)
     {
-        mprf("There isn't anything %s to %sbutcher here.",
+        mprf("There isn't anything %s to %scarve here.",
              butcher_edible ? "edible" : "else",
              bottle_blood ? "bottle or " : "");
     }

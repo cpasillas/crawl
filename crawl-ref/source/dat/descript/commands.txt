@@ -181,11 +181,11 @@ Casts a spell.
 %%%%
 CMD_BUTCHER
 
-Butcher corpse
+Butcher turkey
 %%%%
 CMD_BUTCHER verbose
 
-Butchers a corpse into chunks.
+Carves a corpse into plateable pieces for sharing with family.
 %%%%
 CMD_MEMORISE_SPELL
 

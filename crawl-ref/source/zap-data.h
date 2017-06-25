@@ -1173,7 +1173,8 @@ _mon_hex_zap(ZAP_SLEEP, BEAM_SLEEP),
 
 {
     ZAP_SLUG_DART,
-    "slug dart",
+    //"slug dart",
+    "turkey quill",
     25,
     nullptr,
     nullptr,
