@@ -143,12 +143,10 @@ string item_def::name(description_level_type descrip, bool terse, bool ident,
                         | ISFLAG_COSMETIC_MASK;
     }
 
-    if (descrip == DESC_NONE) {
+    if (descrip == DESC_NONE)
         return "";
-    }
 
     ostringstream buff;
-
 
     const string auxname = name_aux(descrip, terse, ident, with_inscription,
                                     ignore_flags);
@@ -2071,22 +2069,8 @@ string item_def::name_aux(description_level_type desc, bool terse, bool ident,
 
         const bool shaped = starts_with(_name, "shaped ");
 
+        // All corpses are named 'turkey'.
         buff << "turkey ";
-
-        /* if (!_name.empty() && name_type == MF_NAME_ADJECTIVE)
-            buff << _name << " ";
-
-        if ((name_flags & MF_NAME_SPECIES) && name_type == MF_NAME_REPLACE)
-            buff << _name << " ";
-        else if (!dbname && !starts_with(_name, "the "))
-        {
-            const monster_type mc = mon_type;
-            if (!(mons_is_unique(mc) && mons_species(mc) == mc))
-                buff << mons_type_name(mc, DESC_PLAIN) << ' ';
-
-            if (!_name.empty() && shaped)
-                buff << _name << ' ';
-        } */
 
         if (item_typ == CORPSE_BODY)
             buff << "corpse";
