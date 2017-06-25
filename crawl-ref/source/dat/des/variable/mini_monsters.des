@@ -124,7 +124,7 @@ DEPTH:  D:9-, Spider
 MONS:   killer bee, meliai, queen bee, hornet
 KMONS:  *R = worm
 KITEM:  * = *
-KITEM:  R = royal jelly
+KITEM:  R = royal turkey leg
 SUBST:  ? : .w
 SUBST:  * : * R:3
 # Since one has to dig the bees out, early meliai are fine.
@@ -157,7 +157,7 @@ NAME:   minivault_7
 TAGS:   uniq_beehive patrolling
 DEPTH:  D:9-
 MONS:   queen bee, meliai, killer bee
-KITEM:  R = royal jelly
+KITEM:  R = royal turkey leg
 COLOUR: x = yellow
 TILE:   x = wall_wax
 : if you.absdepth() < 12 then
@@ -464,7 +464,7 @@ ENDMAP
 NAME:  minmay_rat_hole
 DEPTH: D:2-4
 MONS:  rat, quokka
-ITEM:  bread with stuffing / meat ration / nothing w:60
+ITEM:  bread with stuffing / turkey breast slice / nothing w:60
 MAP
  xxx
 xxdx
@@ -1221,7 +1221,7 @@ NAME:   minmay_ogre_servants
 DEPTH:  D:3-6
 MONS:   ogre
 NSUBST: " = 6:" / *:'
-KITEM:  ' = meat ration
+KITEM:  ' = turkey breast slice
 KMONS:  "' = goblin
 MAP
 xxxxx
@@ -1898,7 +1898,7 @@ ENDMAP
 NAME: lightli_orcish_oven
 DEPTH: D:6-11, Orc
 MONS: orc warrior, orc
-ITEM: meat ration, bread with stuffing
+ITEM: turkey breast slice, bread with stuffing
 MAP
 xxxxxxxxxx
 xvvv....xx
@@ -2393,7 +2393,7 @@ TAGS:   no_monster_gen no_item_gen patrolling
 MONS:   spriggan skeleton / centaur skeleton
 MONS:   troll skeleton / hungry ghost
 KMONS:  A = unseen horror
-ITEM:   fruit q:1, royal jelly q:q, bread with stuffing q:1
+ITEM:   fruit q:1, royal turkey leg q:q, bread with stuffing q:1
 SUBST:  D : DDDDE
 NSUBST: D = 1 = A:4 .:1 / 2:d / 2:e / 1:1, E = 2:d / 2:e / 2:1
 MAP
@@ -2919,7 +2919,7 @@ NAME:    minislime_mu
 TAGS:    no_monster_gen no_item_gen
 DEPTH:   Depths, !Depths:$
 MONS:    large slime creature, great orb of eyes, eye of draining
-KITEM:   R = royal jelly
+KITEM:   R = royal turkey leg
 ITEM:    scroll of teleportation q:2 / wand of digging
 ITEM:    scroll of teleportation q:2 w:20 / wand of digging w:20 / \
          dagger ego:distortion ident:type

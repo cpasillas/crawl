@@ -339,7 +339,7 @@ MONS:    basilisk / wyvern w:25 / komodo dragon / crocodile w:25
 NSUBST:  2 = 3:2 / 3 = 2. / *:.
 SUBST:   z = .xc
 SHUFFLE: %*RO
-KITEM:   R = royal jelly
+KITEM:   R = royal turkey leg
 KFEAT:   O = enter_lair
 MAP
 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
@@ -1402,7 +1402,7 @@ NAME:   beast_lair_carwin_2
 TAGS:   transparent luniq_beast_lair
 : beast_lair_populate_mons_small(_G)
 : beast_lair_randomise(_G)
-ITEM:  meat ration
+ITEM:  turkey breast slice
 SUBST: ? : .
 MAP
   ...
@@ -2203,7 +2203,7 @@ DEPTH:  Lair, !Lair:$
 MONS:   black bear / polar bear
 KFEAT:  " = W
 KMONS:  " = electric eel w:40 / nothing
-KITEM:  % = meat ration
+KITEM:  % = turkey breast slice
 SUBST:  % = %., * = *:40 |, B = 1., E = tE
 CLEAR:  E
 MAP
@@ -2564,8 +2564,8 @@ MONS:    black bear, polar bear
 KMONS:   P = plant
 # The one big reward and the several smaller stacks of items
 # are randomly split between the mostly-dog and mostly-bear sections.
-KITEM:   $ = any, any w:1 / nothing w:5, meat ration q:1
-KITEM:   % = any, any w:1 / nothing w:5, royal jelly q:2
+KITEM:   $ = any, any w:1 / nothing w:5, turkey breast slice q:1
+KITEM:   % = any, any w:1 / nothing w:5, royal turkey leg q:2
 KITEM:   *| = gold, gold, gold, acquire any
 NSUBST:  2 = 2:22334 / *:3
 SHUFFLE: %'*" / '$"|

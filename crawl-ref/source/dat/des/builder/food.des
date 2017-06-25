@@ -98,7 +98,7 @@ DEPTH:  D:8-14
 WEIGHT: 15
 TAGS:   uniq_second_food extra chance_second_food
 MONS:   queen bee, killer bee
-ITEM:   royal jelly
+ITEM:   royal turkey leg
 COLOUR: a = yellow
 TILE:   a = wall_wax
 SUBST:  a = x
@@ -151,7 +151,7 @@ TAGS:   uniq_second_food extra chance_second_food no_monster_gen no_pool_fixup \
         patrolling
 KMONS:  A = merfolk ; spear
 KFEAT:  g = shallow_water
-ITEM:   meat ration q:2, bread with stuffing q:3, throwing net
+ITEM:   turkey breast slice q:2, bread with stuffing q:3, throwing net
 :       dgn.delayed_decay(_G, 'g', 'electric eel corpse')
 MAP
 xxxxxx
@@ -169,8 +169,8 @@ WEIGHT: 15
 TAGS:   uniq_second_food extra chance_second_food no_monster_gen patrolling
 MONS:   hornet / worm w:5 / worker ant
 MONS:   hornet w:7 / soldier ant w:13
-ITEM:   meat ration q:1 / fruit q:3
-ITEM:   royal jelly q:3, royal jelly q:6
+ITEM:   turkey breast slice q:1 / fruit q:3
+ITEM:   royal turkey leg q:3, royal turkey leg q:6
 MAP
 .xxxxxxx
 @xx.x.xcccc
@@ -191,7 +191,7 @@ KMONS:  B = ooze
 : if you.absdepth() > 10 then
 KMONS:  C = slime creature
 : end
-KITEM:  C = royal jelly q:10
+KITEM:  C = royal turkey leg q:10
 KFEAT:  C = altar_jiyva w:1 / . w:20
 KMASK:  W = no_monster_gen
 MARKER: + = lua:props_marker({ door_restrict="veto" })
@@ -218,10 +218,10 @@ KMONS:    C = yak
 KMONS:    D = big kobold
 KMONS:    E = big kobold ; nothing
 KMONS:    F = plant
-KITEM:    C = royal jelly q:2
+KITEM:    C = royal turkey leg q:2
 KITEM:    E = falchion ego:flaming ident:type / \
               hand axe ego:flaming ident:type
-KITEM:    H = meat ration q:2
+KITEM:    H = turkey breast slice q:2
 KITEM:    I = halberd
 KFEAT:    EF = shallow_water
 MAP
@@ -255,8 +255,8 @@ KMONS:   G = necrophage
 KMONS:   H = crimson imp
 KITEM:   1 = stone q:1 w:50 no_pickup / large rock q:1 w:24 / \
              mundane hand axe w:1 no_pickup
-KITEM:   Ya = bread with stuffing / meat ration
-KITEM:   b = royal jelly / fruit q:1
+KITEM:   Ya = bread with stuffing / turkey breast slice
+KITEM:   b = royal turkey leg / fruit q:1
 KFEAT:   1Yab = shallow_water
 KMASK:   1Yac = no_monster_gen
 MARKER:  Y = lua:fog_machine { cloud_type = "steam", pow_min = 1, \
@@ -318,7 +318,7 @@ TAGS:   uniq_second_food extra chance_second_food no_monster_gen no_trap_gen \
   dgn.delayed_decay(_G, 'g', 'orc skeleton / human skeleton / elf skeleton'
                              .. ' / dwarf skeleton')
 }}
-ITEM:   bread with stuffing q:3, meat ration q:1, throwing net
+ITEM:   bread with stuffing q:3, turkey breast slice q:1, throwing net
 MARKER: O = lua:fog_machine { cloud_type = "flame", pow_min = 10, \
                               pow_max = 10, delay = 10, size = 1, \
                               walk_dist = 0, excl_rad = 0 }
@@ -352,8 +352,8 @@ MONS:   human ; animal skin . hand axe
     mons("hog w:" .. hog_weight .. " / yak w:1")
   end
 }}
-ITEM:   royal jelly q:4, bread with stuffing q:2
-ITEM:   meat ration q:1
+ITEM:   royal turkey leg q:4, bread with stuffing q:2
+ITEM:   turkey breast slice q:1
 KFEAT:  K = iron_grate
 KFEAT:  - = open_door
 MAP
