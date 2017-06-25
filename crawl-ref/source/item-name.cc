@@ -2063,14 +2063,12 @@ string item_def::name_aux(description_level_type desc, bool terse, bool ident,
 
         const bool shaped = starts_with(_name, "shaped ");
 
-        // All corpses are named 'turkey'.
-        buff << "turkey ";
-
-        // A turkey corpse is just a turkey.
-        //if (item_typ == CORPSE_BODY)
-        //    buff << "corpse";
-        if (item_typ == CORPSE_SKELETON)
-            buff << "skeleton";
+        // All corpses are dead turkeys
+        if (item_typ == CORPSE_BODY)
+            buff << "dead turkey";
+        // All skeletons are turkey skeletons
+        else if (item_typ == CORPSE_SKELETON)
+            buff << "turkey skeleton";
         else
             buff << "corpse bug";
 
