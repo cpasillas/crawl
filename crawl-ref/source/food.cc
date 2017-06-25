@@ -359,7 +359,7 @@ static void _finished_eating_message(food_type type)
     {
         if (food_is_meaty(type))
         {
-            mpr("Blech - you need greens!");
+            mpr("Blech - you need stuffing and cranberries!");
             return;
         }
     }
@@ -367,7 +367,7 @@ static void _finished_eating_message(food_type type)
     {
         if (type == FOOD_MEAT_RATION)
         {
-            mpr("That meat ration really hit the spot!");
+            mpr("Those turkey breast slices really hit the spot!");
             return;
         }
     }
@@ -376,7 +376,7 @@ static void _finished_eating_message(food_type type)
     {
         if (food_is_veggie(type))
         {
-            mpr("Blech - you need meat!");
+            mpr("Blech - you need turkey!");
             return;
         }
     }
@@ -385,13 +385,13 @@ static void _finished_eating_message(food_type type)
         switch (type)
         {
         case FOOD_BREAD_RATION:
-            mpr("That bread ration really hit the spot!");
+            mpr("That bread with stuffing really hit the spot!");
             return;
         case FOOD_FRUIT:
         {
             string taste = getMiscString("eating_fruit");
             if (taste.empty())
-                taste = "Eugh, buggy fruit.";
+                taste = "Eugh, buggy cranberries.";
             mpr(taste);
             return;
         }
@@ -401,7 +401,7 @@ static void _finished_eating_message(food_type type)
     }
 
     if (type == FOOD_ROYAL_JELLY)
-        mpr("That royal jelly was delicious!");
+        mpr("That royal turkey leg was delicious!");
 }
 
 // Returns which of two food items is older (true for first, else false).

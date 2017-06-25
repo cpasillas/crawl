@@ -2066,9 +2066,10 @@ string item_def::name_aux(description_level_type desc, bool terse, bool ident,
         // All corpses are named 'turkey'.
         buff << "turkey ";
 
-        if (item_typ == CORPSE_BODY)
-            buff << "corpse";
-        else if (item_typ == CORPSE_SKELETON)
+        // A turkey corpse is just a turkey.
+        //if (item_typ == CORPSE_BODY)
+        //    buff << "corpse";
+        if (item_typ == CORPSE_SKELETON)
             buff << "skeleton";
         else
             buff << "corpse bug";

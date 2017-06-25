@@ -5610,10 +5610,11 @@ void item_list::parse_random_by_class(string c, item_spec &spec)
 
 void item_list::parse_raw_name(string name, item_spec &spec)
 {
+    string raw_name = string(name);
     trim_string(name);
     if (name.empty())
     {
-        error = make_stringf("Bad item name: '%s'", name.c_str());
+        error = make_stringf("Bad item name: '%s', raw name: '%s'", name.c_str(), raw_name.c_str());
         return ;
     }
 
@@ -5627,7 +5628,7 @@ void item_list::parse_raw_name(string name, item_spec &spec)
         return;
     }
 
-    error = make_stringf("Bad item name: '%s'", name.c_str());
+    error = make_stringf("Bad item name: '%s', parsed type: '%d'", name.c_str(), parsed.base_type);
 }
 
 item_list::item_spec_slot item_list::parse_item_spec(string spec)
