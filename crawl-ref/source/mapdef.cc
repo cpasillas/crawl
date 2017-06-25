@@ -5628,7 +5628,11 @@ void item_list::parse_raw_name(string name, item_spec &spec)
         return;
     }
 
-    error = make_stringf("Bad item name: '%s', parsed type: '%d'", name.c_str(), parsed.base_type);
+    error = make_stringf(
+        "Bad item name: '%s', parsed type: '%d', raw name: '%s'", 
+        name.c_str(), 
+        parsed.base_type,
+        raw_name.c_str());
 }
 
 item_list::item_spec_slot item_list::parse_item_spec(string spec)

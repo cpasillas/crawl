@@ -2934,7 +2934,7 @@ ENDMAP
 NAME:   supply_closet_lemuel
 DEPTH:  D:1-9
 TAGS:   no_monster_gen extra
-ITEM:   bread ration / meat ration / arrow /\
+ITEM:   bread with stuffing / meat ration / arrow /\
         bolt / spear / any potion w:5
 MAP
 x+xx
