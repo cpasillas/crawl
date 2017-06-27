@@ -1020,7 +1020,7 @@ TAGS:  patrolling no_monster_gen transparent
 DEPTH: D:2-5
 KMONS: 2 = adder
 KMONS: 3 = plant
-ITEM:  fruit
+ITEM:  cranberry
 SUBST: - = wwwwwwWWW
 SUBST: . = ........33
 SUBST: ? = .wwt3%dd22
