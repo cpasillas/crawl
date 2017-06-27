@@ -345,7 +345,7 @@ KMONS:  1 = orange demon
 KMONS:  2 = hornet / killer bee w:2 / nothing w:2
 KMONS:  3 = death drake / green death
 KFEAT:  123 = W
-KITEM:  3 = royal turkey leg
+KITEM:  3 = pumpkin pie
 COLOUR: x = yellow
 TILE:   x = wall_wax
 MAP
@@ -953,7 +953,7 @@ MONS:    draconian shifter w:5 / shadow demon w:5 / lich / \
 MONS:    bone dragon / tentacled starspawn / starcursed mass / \
          apocalypse crab / dancing weapon / tentacled monstrosity / \
          glowing shapeshifter
-ITEM:    superb_item, royal turkey leg q:2
+ITEM:    superb_item, pumpkin pie q:2
 ITEM:    bolt good_item q:40 / arrow good_item q:40, any magical staff
 ITEM:    scroll of magic mapping q:4 / scroll of random uselessness q:4
 ITEM:    ring mail randart / scale mail randart / chain mail randart w:20
@@ -1188,7 +1188,7 @@ TAGS:   abyss_rune unrand patrolling
 MONS:   killer bee, meliai, spark wasp
 MONS:   wretched star, green very ugly thing
 KMONS:  O = queen bee
-ITEM:   royal turkey leg q:1
+ITEM:   pumpkin pie q:1
 KITEM:  O = abyssal rune of Zot
 KFEAT:  a = x
 KFEAT:  A = stone_arch
@@ -1457,7 +1457,7 @@ KMONS:   5 = thrashing horror
 KMONS:   6 = lurking horror
 # Note: if anything in these two item sets becomes useful for more then a tiny
 # fraction of characters finding the abyssal rune, remove or replace them.
-KITEM:   4d = scroll of random uselessness w:15 q:1 / fruit q:1 w:4 / \
+KITEM:   4d = scroll of random uselessness w:15 q:1 / cranberry q:1 w:4 / \
          club w:6 / stone q:1 / needle q:1 ego:confusion / \
          mundane animal skin / mundane ring mail / gold q:1
 KITEM:   5 = wand of confusion / wand of flame / whip not_cursed w:2 / \

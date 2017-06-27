@@ -1352,7 +1352,7 @@ TAGS:    transparent extra decor
 DEPTH:   D, Depths, Elf
 WEIGHT:  1
 SHUFFLE: defg
-ITEM:    q:1 $, fruit q:1, royal turkey leg q:1, stone q:1
+ITEM:    q:1 $, cranberry q:1, pumpkin pie q:1, stone q:1
 NSUBST:  ' = 9:d / *:.
 MAP
 '.......'.......'
@@ -1379,7 +1379,7 @@ NAME:   roderic_three_in_a_row
 TAGS:   transparent extra decor
 DEPTH:  D, Depths, Elf
 WEIGHT: 1
-ITEM:   q:1 $, fruit q:1, stone, fruit q:1
+ITEM:   q:1 $, cranberry q:1, stone, cranberry q:1
 SUBST:  ' : TUdefg
 MAP
 @xxxx@xxxx@
@@ -3059,7 +3059,7 @@ NAME:   dk_vineyard_1
 DEPTH:  D:2-12
 WEIGHT: 4
 TAGS:   no_item_gen no_monster_gen uniq_vineyard extra
-ITEM:   fruit q:1 / fruit q:5
+ITEM:   cranberry q:1 / cranberry q:5
 NSUBST: . = 6:d
 KFEAT:  w = shallow_water
 FTILE:  .d = floor_moss / floor_grass / floor_dirt
@@ -3081,7 +3081,7 @@ NAME:   dk_vineyard_2
 DEPTH:  D:2-12
 WEIGHT: 4
 TAGS:   no_item_gen no_monster_gen uniq_vineyard extra
-ITEM:   fruit q:1 / fruit q:5
+ITEM:   cranberry q:1 / cranberry q:5
 NSUBST: . = 4:d
 KFEAT:  w = shallow_water
 FTILE:  .d = floor_moss / floor_grass
@@ -3098,7 +3098,7 @@ NAME:   dk_vineyard_3
 DEPTH:  D:2-12
 WEIGHT: 4
 TAGS:   no_item_gen no_monster_gen uniq_vineyard extra
-ITEM:   fruit q:1 / fruit q:5
+ITEM:   cranberry q:1 / cranberry q:5
 NSUBST: . = 4:d
 NSUBST: : = 5:. / *:'
 KFEAT:  w = shallow_water
@@ -3335,7 +3335,7 @@ NAME:  bh_chokoban
 TAGS:  extra decor no_exits
 TAGS:  no_rotate no_hmirror no_vmirror
 DEPTH: D:2-, !D:$, Depths:2-, !Depths:$, Lair:2-, !Lair:$
-ITEM:  fruit q:1
+ITEM:  cranberry q:1
 MAP
 cccccc  ccccc
 c....c  c...c

@@ -54,7 +54,7 @@ ENDMAP
 NAME:   blue_anna_fruit_fields
 TAGS:   fruiting_plant allow_dup unrand
 KMONS:  P = plant
-ITEM:   fruit q:4
+ITEM:   cranberry q:4
 NSUBST: . = 1:d / *:., " = 2:d / *:.
 FTILE:  .dP = floor_grey_dirt / floor_grass w:20 / floor_dirt w:15
 COLOUR: .dP = lightgrey / green w:20 / brown w:15
@@ -98,7 +98,7 @@ DEPTH:  D:8-14
 WEIGHT: 15
 TAGS:   uniq_second_food extra chance_second_food
 MONS:   queen bee, killer bee
-ITEM:   royal turkey leg
+ITEM:   pumpkin pie
 COLOUR: a = yellow
 TILE:   a = wall_wax
 SUBST:  a = x
@@ -169,8 +169,8 @@ WEIGHT: 15
 TAGS:   uniq_second_food extra chance_second_food no_monster_gen patrolling
 MONS:   hornet / worm w:5 / worker ant
 MONS:   hornet w:7 / soldier ant w:13
-ITEM:   turkey breast slice q:1 / fruit q:3
-ITEM:   royal turkey leg q:3, royal turkey leg q:6
+ITEM:   turkey breast slice q:1 / cranberry q:3
+ITEM:   pumpkin pie q:3, pumpkin pie q:6
 MAP
 .xxxxxxx
 @xx.x.xcccc
@@ -191,7 +191,7 @@ KMONS:  B = ooze
 : if you.absdepth() > 10 then
 KMONS:  C = slime creature
 : end
-KITEM:  C = royal turkey leg q:10
+KITEM:  C = pumpkin pie q:10
 KFEAT:  C = altar_jiyva w:1 / . w:20
 KMASK:  W = no_monster_gen
 MARKER: + = lua:props_marker({ door_restrict="veto" })
@@ -218,7 +218,7 @@ KMONS:    C = yak
 KMONS:    D = big kobold
 KMONS:    E = big kobold ; nothing
 KMONS:    F = plant
-KITEM:    C = royal turkey leg q:2
+KITEM:    C = pumpkin pie q:2
 KITEM:    E = falchion ego:flaming ident:type / \
               hand axe ego:flaming ident:type
 KITEM:    H = turkey breast slice q:2
@@ -256,7 +256,7 @@ KMONS:   H = crimson imp
 KITEM:   1 = stone q:1 w:50 no_pickup / large rock q:1 w:24 / \
              mundane hand axe w:1 no_pickup
 KITEM:   Ya = bread with stuffing / turkey breast slice
-KITEM:   b = royal turkey leg / fruit q:1
+KITEM:   b = pumpkin pie / cranberry q:1
 KFEAT:   1Yab = shallow_water
 KMASK:   1Yac = no_monster_gen
 MARKER:  Y = lua:fog_machine { cloud_type = "steam", pow_min = 1, \
@@ -286,7 +286,7 @@ WEIGHT: 15
 TAGS:   uniq_second_food extra chance_second_food no_monster_gen patrolling
 MONS:   tengu warrior / tengu conjurer, plant
 NSUBST: 2 : 3:2 / *:.
-ITEM:   bread with stuffing / fruit q:7
+ITEM:   bread with stuffing / cranberry q:7
 MAP
  xx+xx
 xx2.2xx
@@ -352,7 +352,7 @@ MONS:   human ; animal skin . hand axe
     mons("hog w:" .. hog_weight .. " / yak w:1")
   end
 }}
-ITEM:   royal turkey leg q:4, bread with stuffing q:2
+ITEM:   pumpkin pie q:4, bread with stuffing q:2
 ITEM:   turkey breast slice q:1
 KFEAT:  K = iron_grate
 KFEAT:  - = open_door

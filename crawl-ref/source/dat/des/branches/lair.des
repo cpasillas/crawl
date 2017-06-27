@@ -339,7 +339,7 @@ MONS:    basilisk / wyvern w:25 / komodo dragon / crocodile w:25
 NSUBST:  2 = 3:2 / 3 = 2. / *:.
 SUBST:   z = .xc
 SHUFFLE: %*RO
-KITEM:   R = royal turkey leg
+KITEM:   R = pumpkin pie
 KFEAT:   O = enter_lair
 MAP
 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
@@ -1230,7 +1230,7 @@ MONS:    wolf, black bear / polar bear, spriggan / centaur w:4
 KMONS:   9 = 9
 KMONS:   * = spriggan rider / faun w:4
 KMONS:   P = plant / bush
-ITEM:    fruit q:1
+ITEM:    cranberry q:1
 KITEM:   9* = *
 KFEAT:   9 = W
 SHUFFLE: wW'"-~_9 / ''GG'''* / '''0'''% / `````11G
@@ -1563,8 +1563,8 @@ DEPTH:  Lair
 ORIENT: float
 WEIGHT: 9
 MONS:   plant, butterfly
-ITEM:   fruit q:1 / fruit q:2 w:7 / fruit q:3 w:3 /\
-        fruit q:4 w:1 / fruit q:5 w:1 / fruit q:6 w:1
+ITEM:   cranberry q:1 / cranberry q:2 w:7 / cranberry q:3 w:3 /\
+        cranberry q:4 w:1 / cranberry q:5 w:1 / cranberry q:6 w:1
 KFEAT:  ^~ = .
 : local size = crawl.random2(9)
 : if size > 7 then
@@ -1604,7 +1604,7 @@ TAGS:   extra transparent decor
 DEPTH:  Lair, Snake
 ORIENT: float
 MONS:   plant, fungus
-KITEM:  a : fruit q:1
+KITEM:  a : cranberry q:1
 : if crawl.one_chance_in(5) then
 SUBST:  '"~ = . 1
 SUBST:  0`-. = .:90 a:10 2:1
@@ -2090,7 +2090,7 @@ TAGS:   no_monster_gen
 DEPTH:  Lair
 MONS:   river rat band, hell rat, river rat / rat
 KMONS:  P = plant / fungus w:2
-KITEM:  d = fruit / bread with stuffing
+KITEM:  d = cranberry / bread with stuffing
 NSUBST: ' = 1:1 / 2:P / 2:2 / 2:3 / 2:d
 MAP
  xxxx
@@ -2109,7 +2109,7 @@ NAME:   kennysheep_abandoned_house
 TAGS:   ruin
 DEPTH:  Lair
 MONS:   rat, river rat, hell rat
-KITEM:  d = fruit / bread with stuffing
+KITEM:  d = cranberry / bread with stuffing
 NSUBST: d = 1:d / 1:* / 1:9 / 1:3 / * = dd11223.......
 MAP
       .......
@@ -2565,7 +2565,7 @@ KMONS:   P = plant
 # The one big reward and the several smaller stacks of items
 # are randomly split between the mostly-dog and mostly-bear sections.
 KITEM:   $ = any, any w:1 / nothing w:5, turkey breast slice q:1
-KITEM:   % = any, any w:1 / nothing w:5, royal turkey leg q:2
+KITEM:   % = any, any w:1 / nothing w:5, pumpkin pie q:2
 KITEM:   *| = gold, gold, gold, acquire any
 NSUBST:  2 = 2:22334 / *:3
 SHUFFLE: %'*" / '$"|

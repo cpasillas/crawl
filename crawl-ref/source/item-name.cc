@@ -1855,8 +1855,8 @@ string item_def::name_aux(description_level_type desc, bool terse, bool ident,
         switch (item_typ)
         {
         case FOOD_MEAT_RATION: buff << "turkey breast slice"; break;
-        case FOOD_BREAD_RATION: buff << "bread with stuffing"; break;
-        case FOOD_ROYAL_JELLY: buff << "royal turkey leg"; break;
+        case FOOD_BREAD_RATION: buff << "bread with stuffing portion"; break;
+        case FOOD_ROYAL_JELLY: buff << "pumpkin pie"; break;
         case FOOD_CHUNK:
             switch (determine_chunk_effect(*this))
             {
@@ -1872,7 +1872,7 @@ string item_def::name_aux(description_level_type desc, bool terse, bool ident,
 
             buff << "turkey leg";
             break;
-        case FOOD_FRUIT: buff << "fruit"; break;
+        case FOOD_FRUIT: buff << "cranberry"; break;
 #if TAG_MAJOR_VERSION == 34
         default: buff << "removed food"; break;
 #endif
@@ -2076,7 +2076,7 @@ string item_def::name_aux(description_level_type desc, bool terse, bool ident,
             && !(name_flags & MF_NAME_SPECIES) && name_type != MF_NAME_SUFFIX
             && !dbname)
         {
-            buff << " of " << _name;
+            buff << ", " << _name;
         }
         break;
     }

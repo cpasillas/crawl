@@ -124,7 +124,7 @@ DEPTH:  D:9-, Spider
 MONS:   killer bee, meliai, queen bee, hornet
 KMONS:  *R = worm
 KITEM:  * = *
-KITEM:  R = royal turkey leg
+KITEM:  R = pumpkin pie
 SUBST:  ? : .w
 SUBST:  * : * R:3
 # Since one has to dig the bees out, early meliai are fine.
@@ -157,7 +157,7 @@ NAME:   minivault_7
 TAGS:   uniq_beehive patrolling
 DEPTH:  D:9-
 MONS:   queen bee, meliai, killer bee
-KITEM:  R = royal turkey leg
+KITEM:  R = pumpkin pie
 COLOUR: x = yellow
 TILE:   x = wall_wax
 : if you.absdepth() < 12 then
@@ -2393,7 +2393,7 @@ TAGS:   no_monster_gen no_item_gen patrolling
 MONS:   spriggan skeleton / centaur skeleton
 MONS:   troll skeleton / hungry ghost
 KMONS:  A = unseen horror
-ITEM:   fruit q:1, royal turkey leg q:q, bread with stuffing q:1
+ITEM:   cranberry q:1, pumpkin pie q:q, bread with stuffing q:1
 SUBST:  D : DDDDE
 NSUBST: D = 1 = A:4 .:1 / 2:d / 2:e / 1:1, E = 2:d / 2:e / 2:1
 MAP
@@ -2766,7 +2766,7 @@ DEPTH:  D:8-, !D:$
 TAGS:   extra no_monster_gen
 NSUBST: T = 1:. / 1:t
 KMONS:  1 = oklob plant
-KITEM:  1A_ = fruit q:3
+KITEM:  1A_ = cranberry q:3
 KFEAT:  _ = altar_fedhas
 MAP
  tttttttttt
@@ -2919,7 +2919,7 @@ NAME:    minislime_mu
 TAGS:    no_monster_gen no_item_gen
 DEPTH:   Depths, !Depths:$
 MONS:    large slime creature, great orb of eyes, eye of draining
-KITEM:   R = royal turkey leg
+KITEM:   R = pumpkin pie
 ITEM:    scroll of teleportation q:2 / wand of digging
 ITEM:    scroll of teleportation q:2 w:20 / wand of digging w:20 / \
          dagger ego:distortion ident:type
@@ -3135,7 +3135,7 @@ TAGS:    no_monster_gen
 DEPTH:   D:13-
 MONS:    patrolling cherub, patrolling dancing weapon ; great sword ego:flaming
 KMONS:   p = plant
-ITEM:    fruit tile:food_apple
+ITEM:    cranberry tile:food_apple
 NSUBST:  1 = 2:1 / *:.
 NSUBST:  d = 3:d / *:.
 SUBST:   3 = 33.
