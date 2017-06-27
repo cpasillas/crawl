@@ -24,7 +24,7 @@ NAME:   first_bread
 DEPTH:  D:2-5
 CHANCE: 2500, 3333 (D:3), 5000 (D:4), 10000 (D:5)
 TAGS:   uniq_first_food extra transparent
-ITEM:   bread with stuffing
+ITEM:   bread with stuffing portion
 MAP
 d
 ENDMAP
@@ -75,7 +75,7 @@ DEPTH:  D:7-14
 : food_weight(_G, 7)
 WEIGHT: 25
 TAGS:   uniq_second_food extra chance_second_food
-ITEM:   bread with stuffing q:2
+ITEM:   bread with stuffing portion q:2
 : if crawl.one_chance_in(8) then
 :   dgn.delayed_decay(_G, 'e', 'spriggan name:baked n_adj n_spe n_des corpse')
 : else
@@ -151,7 +151,7 @@ TAGS:   uniq_second_food extra chance_second_food no_monster_gen no_pool_fixup \
         patrolling
 KMONS:  A = merfolk ; spear
 KFEAT:  g = shallow_water
-ITEM:   turkey breast slice q:2, bread with stuffing q:3, throwing net
+ITEM:   turkey breast slice q:2, bread with stuffing portion q:3, throwing net
 :       dgn.delayed_decay(_G, 'g', 'electric eel corpse')
 MAP
 xxxxxx
@@ -255,7 +255,7 @@ KMONS:   G = necrophage
 KMONS:   H = crimson imp
 KITEM:   1 = stone q:1 w:50 no_pickup / large rock q:1 w:24 / \
              mundane hand axe w:1 no_pickup
-KITEM:   Ya = bread with stuffing / turkey breast slice
+KITEM:   Ya = bread with stuffing portion / turkey breast slice
 KITEM:   b = pumpkin pie / cranberry q:1
 KFEAT:   1Yab = shallow_water
 KMASK:   1Yac = no_monster_gen
@@ -286,7 +286,7 @@ WEIGHT: 15
 TAGS:   uniq_second_food extra chance_second_food no_monster_gen patrolling
 MONS:   tengu warrior / tengu conjurer, plant
 NSUBST: 2 : 3:2 / *:.
-ITEM:   bread with stuffing / cranberry q:7
+ITEM:   bread with stuffing portion / cranberry q:7
 MAP
  xx+xx
 xx2.2xx
@@ -318,7 +318,7 @@ TAGS:   uniq_second_food extra chance_second_food no_monster_gen no_trap_gen \
   dgn.delayed_decay(_G, 'g', 'orc skeleton / human skeleton / elf skeleton'
                              .. ' / dwarf skeleton')
 }}
-ITEM:   bread with stuffing q:3, turkey breast slice q:1, throwing net
+ITEM:   bread with stuffing portion q:3, turkey breast slice q:1, throwing net
 MARKER: O = lua:fog_machine { cloud_type = "flame", pow_min = 10, \
                               pow_max = 10, delay = 10, size = 1, \
                               walk_dist = 0, excl_rad = 0 }
@@ -352,7 +352,7 @@ MONS:   human ; animal skin . hand axe
     mons("hog w:" .. hog_weight .. " / yak w:1")
   end
 }}
-ITEM:   pumpkin pie q:4, bread with stuffing q:2
+ITEM:   pumpkin pie q:4, bread with stuffing portion q:2
 ITEM:   turkey breast slice q:1
 KFEAT:  K = iron_grate
 KFEAT:  - = open_door

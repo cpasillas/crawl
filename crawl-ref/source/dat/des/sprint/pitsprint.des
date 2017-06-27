@@ -630,7 +630,7 @@ SUBVAULT: Y : storerooms_room_b
 SUBVAULT: T : the_temple
 SUBVAULT: U : equipment_1
 # Initial consumables
-KITEM: a = bread with stuffing q:7, \
+KITEM: a = bread with stuffing portion q:7, \
        turkey breast slice q:7, \
        cranberry q:40
 KITEM: b = scroll of summoning ident:all q:1, \
@@ -1895,7 +1895,7 @@ TILE:   v = wall_cobalt_stone
 : base_monster_setup(_G)
 KITEM:  34CBDEJK = superb_item ident:all w:66 /\
                    pumpkin pie q:6 /\
-                   bread with stuffing ident:all q:2 /\
+                   bread with stuffing portion ident:all q:2 /\
                    turkey breast slice ident:all q:2
 : lua_marker('_', props_marker {
 :           door_description_suffix=" to a Minivault (Hard)",

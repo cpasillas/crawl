@@ -2253,7 +2253,7 @@ TAGS: no_monster_gen transparent
 MONS: lightning spire, patrolling electric golem
 NSUBST: % = 2:!
 KMONS: ! = patrolling death cob
-KITEM: %! = cranberry q:1 / bread with stuffing w:2 / nothing w:8
+KITEM: %! = cranberry q:1 / bread with stuffing portion w:2 / nothing w:8
 MAP
 @xxxxx@
 .......
