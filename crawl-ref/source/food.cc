@@ -401,7 +401,7 @@ static void _finished_eating_message(food_type type)
     }
 
     if (type == FOOD_ROYAL_JELLY)
-        mpr("That royal turkey leg was delicious!");
+        mpr("That pumpkin pie was incredibly delicious!!!");
 }
 
 // Returns which of two food items is older (true for first, else false).
