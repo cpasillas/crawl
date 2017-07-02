@@ -339,7 +339,7 @@ MONS:    basilisk / wyvern w:25 / komodo dragon / crocodile w:25
 NSUBST:  2 = 3:2 / 3 = 2. / *:.
 SUBST:   z = .xc
 SHUFFLE: %*RO
-KITEM:   R = pumpkin pie
+KITEM:   R = pumpkin pie slice
 KFEAT:   O = enter_lair
 MAP
 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
@@ -2565,7 +2565,7 @@ KMONS:   P = plant
 # The one big reward and the several smaller stacks of items
 # are randomly split between the mostly-dog and mostly-bear sections.
 KITEM:   $ = any, any w:1 / nothing w:5, turkey breast slice q:1
-KITEM:   % = any, any w:1 / nothing w:5, pumpkin pie q:2
+KITEM:   % = any, any w:1 / nothing w:5, pumpkin pie slice q:2
 KITEM:   *| = gold, gold, gold, acquire any
 NSUBST:  2 = 2:22334 / *:3
 SHUFFLE: %'*" / '$"|

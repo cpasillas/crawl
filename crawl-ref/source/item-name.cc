@@ -1856,7 +1856,7 @@ string item_def::name_aux(description_level_type desc, bool terse, bool ident,
         {
         case FOOD_MEAT_RATION: buff << "turkey breast slice"; break;
         case FOOD_BREAD_RATION: buff << "bread with stuffing portion"; break;
-        case FOOD_ROYAL_JELLY: buff << "pumpkin pie"; break;
+        case FOOD_ROYAL_JELLY: buff << "pumpkin pie slice"; break;
         case FOOD_CHUNK:
             switch (determine_chunk_effect(*this))
             {

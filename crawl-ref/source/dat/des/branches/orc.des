@@ -193,7 +193,7 @@ KITEM:   1 = turkey breast slice w:5 / nothing / animal skin / \
              potion of degeneration w:20 / potion of haste w:2 / \
              potion of might w:2
 KFEAT:   1 = 1
-ITEM:    club, potion of degeneration ident:type, pumpkin pie
+ITEM:    club, potion of degeneration ident:type, pumpkin pie slice
 ITEM:    turkey breast slice w:2 / nothing, potion of degeneration ident:type
 SHUFFLE: defO
 KFEAT:   O = enter_orcish_mines
