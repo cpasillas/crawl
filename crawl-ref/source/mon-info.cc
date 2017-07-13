@@ -10,7 +10,9 @@
 #include "mon-info.h"
 
 #include <algorithm>
+#include <map>
 #include <sstream>
+#include <vector>
 
 #include "act-iter.h"
 #include "artefact.h"
@@ -32,6 +34,7 @@
 #include "mon-tentacle.h"
 #include "nearby-danger.h"
 #include "options.h"
+#include "random.h"
 #include "religion.h"
 #include "skills.h"
 #include "spl-goditem.h" // dispellable_enchantments
@@ -116,6 +119,35 @@ static map<enchant_type, monster_info_flags> trivial_ench_mb_mappings = {
     { ENCH_SLOWLY_DYING,    MB_SLOWLY_DYING },
     { ENCH_DISTRACTED_ACROBATICS,     MB_DISTRACTED },
 };
+
+static std::vector<string> turkeyNames = {
+  "ancient turkey",
+  "silly turkey",
+  "happy turkey",
+  "furious turkey",
+  "evil turkey",
+  "magnificent turkey",
+  "elated turkey",
+  "omnipresent turkey",
+  "soulful turkey",
+  "ruined turkey",
+  "unpleasant turkey",
+  "pleasantly aromatic turkey",
+  "delicious-looking turkey",
+  "tasty turkey",
+  "healthy turkey",
+  "diseased turkey",
+  "cool turkey",
+  "uncool turkey",
+  "square turkey",
+  "wrathful turkey",
+  "prideful turkey",
+  "dangerous turkey",
+  "joyful turkey",
+  "random turkey"
+};
+
+static std::map<string,string> oldNameToTurkeyName;
 
 static monster_info_flags ench_to_mb(const monster& mons, enchant_type ench)
 {
@@ -918,14 +950,11 @@ string monster_info::_core_name() const
     else if (is(MB_NAME_ADJECTIVE))
         s = mname + " " + s;
 
-    if (s.length() % 3 == 0) {
-      return "happy turkey";
-    } else if (s.length() % 3 == 1) {
-      return "furious turkey";
-    } else {
-      return "silly turkey";
+    if (oldNameToTurkeyName[s].empty()) {
+      int adj_index = random_range(0, turkeyNames.size());
+      oldNameToTurkeyName[s] = turkeyNames[adj_index];
     }
-    //return s;
+    return oldNameToTurkeyName[s];
 }
 
 string monster_info::_apply_adjusted_description(description_level_type desc,
