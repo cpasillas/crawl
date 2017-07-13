@@ -951,7 +951,7 @@ string monster_info::_core_name() const
         s = mname + " " + s;
 
     if (oldNameToTurkeyName[s].empty()) {
-      int adj_index = random_range(0, turkeyNames.size());
+      int adj_index = random_range(0, turkeyNames.size() - 1);
       oldNameToTurkeyName[s] = turkeyNames[adj_index];
     }
     return oldNameToTurkeyName[s];
