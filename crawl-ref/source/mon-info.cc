@@ -121,30 +121,36 @@ static map<enchant_type, monster_info_flags> trivial_ench_mb_mappings = {
 };
 
 static std::vector<string> turkeyNames = {
-  "ancient turkey",
-  "silly turkey",
-  "happy turkey",
-  "furious turkey",
-  "evil turkey",
-  "magnificent turkey",
-  "elated turkey",
-  "omnipresent turkey",
-  "soulful turkey",
-  "ruined turkey",
-  "unpleasant turkey",
-  "pleasantly aromatic turkey",
-  "delicious-looking turkey",
-  "tasty turkey",
-  "healthy turkey",
-  "diseased turkey",
-  "cool turkey",
-  "uncool turkey",
-  "square turkey",
-  "wrathful turkey",
-  "prideful turkey",
-  "dangerous turkey",
-  "joyful turkey",
-  "random turkey"
+  "ancient",
+  "silly",
+  "happy",
+  "furious",
+  "evil",
+  "magnificent",
+  "elated",
+  "omnipresent",
+  "soulful",
+  "ruined",
+  "unpleasant",
+  "pleasantly aromatic",
+  "delicious-looking",
+  "tasty",
+  "healthy",
+  "diseased",
+  "cool",
+  "uncool",
+  "square",
+  "wrathful",
+  "prideful",
+  "dangerous",
+  "joyful",
+  "random",
+  "fluffy",
+  "fuzzy",
+  "Thanksgiving",
+  "vicious (normal)",
+  "\"calm\"",
+  "preening"
 };
 
 static std::map<string,string> oldNameToTurkeyName;
@@ -952,7 +958,7 @@ string monster_info::_core_name() const
 
     if (oldNameToTurkeyName[s].empty()) {
       int adj_index = random_range(0, turkeyNames.size() - 1);
-      oldNameToTurkeyName[s] = turkeyNames[adj_index];
+      oldNameToTurkeyName[s] = turkeyNames[adj_index] + " turkey";
     }
     return oldNameToTurkeyName[s];
 }
