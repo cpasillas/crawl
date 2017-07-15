@@ -29,6 +29,9 @@ void databaseSystemShutdown();
 
 typedef bool (*db_find_filter)(string key, string body);
 
+string toGobblish(const string &orig);
+string getGobblishVersion(const string &orig);
+
 string getQuoteString(const string &key);
 string getLongDescription(const string &key);
 

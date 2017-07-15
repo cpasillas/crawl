@@ -159,6 +159,17 @@ static string _db_cache_path(string db, const char *lang)
     return savedir_versioned_path("db/" + db);
 }
 
+static std::vector<string> gobbles = {
+  "Gobble",
+  "gobble",
+  "GOBBLE",
+  "gobBLE",
+  "gob",
+  "GOB",
+};
+
+static std::map<string,string> gobTranslation;
+
 // ----------------------------------------------------------------------
 // TextDB
 // ----------------------------------------------------------------------
@@ -768,12 +779,58 @@ static string _query_database(TextDB &db, string key, bool canonicalise_key,
     return str;
 }
 
+string toGobblish(const string &orig)
+{
+    const char *chars = orig.data();
+    int acc = 0;
+    int charsPerGob = 7;
+    unsigned int index = 0;
+    int gobIndex = 0;
+    string gobblish = "";
+    bool firstGobble = true;
+    int randomExtra = random_range(0, gobbles.size() - 1);
+    while (index < orig.size()) {
+      acc += chars[index];
+      index++;
+      gobIndex++;
+      if (gobIndex == charsPerGob) {
+        if (!firstGobble) {
+          gobblish += " ";
+        }
+        gobblish += gobbles[(acc + randomExtra) % gobbles.size()];
+        firstGobble = false;
+        acc = 0;
+        gobIndex = 0;
+      }
+    }
+    // Extra chars after calculating gobblish word.
+    if (gobIndex != 0) {
+      if (!firstGobble) {
+        gobblish += " ";
+      }
+      gobblish += gobbles[(acc + randomExtra) % gobbles.size()];
+    }
+    if (!gobblish.empty()) {
+      gobblish += "!!!";
+    }
+    return gobblish;
+}
+
+string getGobblishVersion(const string &orig) {
+    if (gobTranslation[orig].empty()) {
+      gobTranslation[orig] = toGobblish(orig);
+    }
+    return gobTranslation[orig];
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // Quote DB specific functions.
 
 string getQuoteString(const string &key)
 {
-    return unwrap_desc(_query_database(QuotesDB, key, true, true));
+    return getGobblishVersion(
+        unwrap_desc(_query_database(QuotesDB, key, true, true)));
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -781,7 +838,8 @@ string getQuoteString(const string &key)
 
 string getLongDescription(const string &key)
 {
-    return unwrap_desc(_query_database(DescriptionDB, key, true, true));
+    return getGobblishVersion(
+        unwrap_desc(_query_database(DescriptionDB, key, true, true)));
 }
 
 vector<string> getLongDescKeysByRegex(const string &regex,
@@ -829,7 +887,8 @@ string getShoutString(const string &monst, const string &suffix)
 {
     int num_replacements = 0;
 
-    return _getRandomisedStr(ShoutDB, monst, suffix, num_replacements);
+    return getGobblishVersion(
+        _getRandomisedStr(ShoutDB, monst, suffix, num_replacements));
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -844,16 +903,7 @@ string getSpeakString(const string &key)
     string txt = _getRandomisedStr(SpeakDB, key, "", num_replacements);
     _execute_embedded_lua(txt);
 
-    //return txt;
-    string gobbling = "";
-    if (txt.length() % 3 == 0) {
-      gobbling += "Gobble gobble gobble";
-    } else if (txt.length() % 3 == 1) {
-      gobbling += "Gobble";
-    } else {
-      gobbling += "Gobble Gobble GOBBLE GOBBLE GOBBBBBLLLLEEEE";
-    }
-    return gobbling + "!!!!!!";
+    return getGobblishVersion(txt);
 }
 
 /////////////////////////////////////////////////////////////////////////////
