@@ -1103,15 +1103,7 @@ bool monster_info::has_proper_name() const
 
 string monster_info::proper_name(description_level_type desc) const
 {
-    if (has_proper_name())
-    {
-        if (desc == DESC_ITS)
-            return apostrophise(mname);
-        else
-            return mname;
-    }
-    else
-        return common_name(desc);
+    return common_name(desc);
 }
 
 string monster_info::full_name(description_level_type desc) const
@@ -1119,15 +1111,7 @@ string monster_info::full_name(description_level_type desc) const
     if (desc == DESC_NONE)
         return "";
 
-    if (has_proper_name())
-    {
-        string s = mname + " the " + common_name();
-        if (desc == DESC_ITS)
-            s = apostrophise(s);
-        return s;
-    }
-    else
-        return common_name(desc);
+    return common_name(desc);
 }
 
 // Needed because gcc 4.3 sort does not like comparison functions that take

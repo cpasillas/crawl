@@ -1120,9 +1120,8 @@ static inline bool _monster_warning(activity_interrupt_type ai,
         ash_id_monster_equipment(mon);
         mark_mon_equipment_seen(mon);
 
-        string text = getMiscString(mon->name(DESC_DBNAME) + " title");
-        if (text.empty())
-            text = mon->full_name(DESC_A);
+        string text = mon->full_name(DESC_A);
+        // TODO(cpasillas): Change player ghost coming into view?
         if (mon->type == MONS_PLAYER_GHOST)
         {
             text += make_stringf(" (%s)",

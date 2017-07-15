@@ -2304,10 +2304,8 @@ string monster::name(description_level_type desc, bool force_vis,
         return s;
 
     monster_info mi(this, MILEV_NAME);
-    // i.e. to produce "the Maras" instead of just "Maras"
-    if (force_article)
-        mi.mb.set(MB_NAME_UNQUALIFIED, false);
-    return mi.proper_name(desc)
+    return mi.common_name(desc);
+
 #ifdef DEBUG_MONINDEX
     // This is incredibly spammy, too bad for regular debug builds, but
     // I keep re-adding this over and over during debugging.
@@ -2335,7 +2333,7 @@ string monster::full_name(description_level_type desc) const
         return s;
 
     monster_info mi(this, MILEV_NAME);
-    return mi.full_name(desc);
+    return mi.common_name(desc);
 }
 
 string monster::pronoun(pronoun_type pro, bool force_visible) const
